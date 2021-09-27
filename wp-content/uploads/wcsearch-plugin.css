@@ -1,0 +1,268 @@
+header.wcsearch-listing-header h2,
+header.wcsearch-review-header h2 {
+	font-size: 20px;
+}
+
+div.wcsearch-content a,
+div.wcsearch-content a:visited,
+div.wcsearch-content a:focus,
+div.wcsearch-content .wcsearch-pagination > li > a,
+div.wcsearch-content .wcsearch-pagination > li > a:visited,
+div.wcsearch-content .wcsearch-pagination > li > a:focus,
+div.wcsearch-content .wcsearch-btn-default, div.wcsearch-content div.wcsearch-btn-default:visited, div.wcsearch-content .wcsearch-btn-default:focus,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-categories-root a,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-categories-root a:visited,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-categories-root a:focus,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-locations-root a,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-locations-root a:visited,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-locations-root a:focus {
+	color: #2393ba;
+}
+div.wcsearch-content a:hover,
+div.wcsearch-content .wcsearch-pagination > li > a:hover,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-categories-root a:hover,
+div.wcsearch-content.wcsearch-terms-menu .wcsearch-locations-root a:hover {
+	color: #2a6496;
+}
+
+div.wcsearch-content .wcsearch-btn-primary,
+div.wcsearch-content a.wcsearch-btn-primary,
+div.wcsearch-content input[type="submit"],
+div.wcsearch-content input[type="button"],
+div.wcsearch-content .wcsearch-btn-primary:visited,
+div.wcsearch-content a.wcsearch-btn-primary:visited,
+div.wcsearch-content input[type="submit"]:visited,
+div.wcsearch-content input[type="button"]:visited,
+div.wcsearch-content .wcsearch-btn-primary:focus,
+div.wcsearch-content a.wcsearch-btn-primary:focus,
+div.wcsearch-content input[type="submit"]:focus,
+div.wcsearch-content input[type="button"]:focus,
+div.wcsearch-content .wcsearch-btn-primary:disabled,
+div.wcsearch-content a.wcsearch-btn-primary:disabled,
+div.wcsearch-content .wcsearch-btn-primary:disabled:focus,
+div.wcsearch-content a.wcsearch-btn-primary:disabled:focus,
+div.wcsearch-content .wcsearch-btn-primary:disabled:hover,
+div.wcsearch-content a.wcsearch-btn-primary:disabled:hover,
+form.wcsearch-content .wcsearch-btn-primary,
+form.wcsearch-content a.wcsearch-btn-primary,
+form.wcsearch-content input[type="submit"],
+form.wcsearch-content input[type="button"],
+form.wcsearch-content .wcsearch-btn-primary:visited,
+form.wcsearch-content a.wcsearch-btn-primary:visited,
+form.wcsearch-content input[type="submit"]:visited,
+form.wcsearch-content input[type="button"]:visited,
+form.wcsearch-content .wcsearch-btn-primary:focus,
+form.wcsearch-content a.wcsearch-btn-primary:focus,
+form.wcsearch-content input[type="submit"]:focus,
+form.wcsearch-content input[type="button"]:focus,
+form.wcsearch-content .wcsearch-btn-primary:disabled,
+form.wcsearch-content a.wcsearch-btn-primary:disabled,
+form.wcsearch-content .wcsearch-btn-primary:disabled:focus,
+form.wcsearch-content a.wcsearch-btn-primary:disabled:focus,
+form.wcsearch-content .wcsearch-btn-primary:disabled:hover,
+form.wcsearch-content a.wcsearch-btn-primary:disabled:hover,
+div.wcsearch-content .wpcf7-form .wpcf7-submit,
+div.wcsearch-content .wpcf7-form .wpcf7-submit:visited,
+div.wcsearch-content .wpcf7-form .wpcf7-submit:focus {
+	color: #FFFFFF;
+	background-color: #2393ba;
+	background-image: none;
+	border-color: #0f7fa6;
+}
+div.wcsearch-content .wcsearch-btn-primary:hover,
+div.wcsearch-content a.wcsearch-btn-primary:hover,
+div.wcsearch-content input[type="submit"]:hover,
+div.wcsearch-content input[type="button"]:hover,
+form.wcsearch-content .wcsearch-btn-primary:hover,
+form.wcsearch-content a.wcsearch-btn-primary:hover,
+form.wcsearch-content input[type="submit"]:hover,
+form.wcsearch-content input[type="button"]:hover,
+div.wcsearch-content .wpcf7-form .wpcf7-submit:hover {
+	color: #FFFFFF;
+	background-color: #1f82a5;
+	background-image: none;
+	border-color: #0b6e91;
+	text-decoration: none;
+}
+
+.wcsearch-content.wcsearch-search-form {
+	background: rgba(107,200,200,1);
+}
+form.wcsearch-content.wcsearch-search-form,
+form.wcsearch-content.wcsearch-search-form a,
+form.wcsearch-content.wcsearch-search-form a:hover,
+form.wcsearch-content.wcsearch-search-form a:visited,
+form.wcsearch-content.wcsearch-search-form a:focus,
+form.wcsearch-content.wcsearch-search-form strong,
+form.wcsearch-content a.wcsearch-advanced-search-label,
+form.wcsearch-content a.wcsearch-advanced-search-label:hover,
+form.wcsearch-content a.wcsearch-advanced-search-label:visited,
+form.wcsearch-content a.wcsearch-advanced-search-label:focus {
+	color: #FFFFFF;
+}
+
+.wcsearch-field-caption .wcsearch-field-icon {
+	color: #2393ba;
+}
+.wcsearch-featured-label {
+	background-color: #1f82a5;
+}
+.wcsearch-sticky-ribbon span {
+	background-color: #1f82a5;
+}
+.wcsearch-sticky-ribbon span::before {
+	border-left: 3px solid #0b6e91;
+	border-top: 3px solid #0b6e91;
+}
+.wcsearch-sticky-ribbon span::after {
+	border-right: 3px solid #0b6e91;
+	border-top: 3px solid #0b6e91;
+}
+.wcsearch-content select:not(.wcsearch-week-day-input),
+.wcsearch-content select:not(.wcsearch-week-day-input):focus {
+	background-image:
+	linear-gradient(50deg, transparent 50%, #FFFFFF 50%),
+	linear-gradient(130deg, #FFFFFF 50%, transparent 50%),
+	linear-gradient(to right, #2393ba, #2393ba) !important;
+}
+.wcsearch-content .wcsearch-checkbox .wcsearch-control-indicator,
+.wcsearch-content .wcsearch-radio .wcsearch-control-indicator {
+	border-color: #2393ba;
+}
+.wcsearch-content .wcsearch-checkbox label input:checked ~ .wcsearch-control-indicator,
+.wcsearch-content .wcsearch-radio label input:checked ~ .wcsearch-control-indicator {
+	background: #2393ba;
+}
+.wcsearch-content .ui-slider.ui-slider-horizontal .ui-widget-header {
+	background-color: #1f82a5;
+}
+.wcsearch-content .ui-slider.ui-widget-content .ui-slider-handle.ui-state-default,
+.wcsearch-content .ui-slider.ui-widget-content .ui-slider-handle.ui-state-default:focus,
+.wcsearch-content .ui-slider.ui-widget-content .ui-slider-handle.ui-state-default:active,
+.wcsearch-content .ui-slider.ui-widget-content .ui-slider-handle.ui-state-focus,
+.wcsearch-content .ui-slider.ui-widget-content .ui-slider-handle.ui-state-hover {
+	border: 1px solid #1f82a5;
+	background-color: #2393ba;
+}
+.wcsearch-content .wcsearch-map-info-window-title {
+	background-color: #2393ba;
+}
+.wcsearch-content .mapboxgl-popup-content {
+	width: 350px;
+}
+.wcsearch-content .wcsearch-category-label,
+.wcsearch-content .wcsearch-tag-label {
+	color: #2393ba;
+	border-color: #2393ba;
+}
+div.wcsearch-content .wcsearch-pagination > li.wcsearch-active > a,
+div.wcsearch-content .wcsearch-pagination > li.wcsearch-active > span,
+div.wcsearch-content .wcsearch-pagination > li.wcsearch-active > a:hover,
+div.wcsearch-content .wcsearch-pagination > li.wcsearch-active > span:hover,
+div.wcsearch-content .wcsearch-pagination > li.wcsearch-active > a:focus,
+div.wcsearch-content .wcsearch-pagination > li.wcsearch-active > span:focus {
+	background-color: #2393ba;
+	border-color: #2393ba;
+	color: #FFFFFF;
+}
+figure.wcsearch-listing-logo figcaption {
+	background-color: #2393ba;
+}
+.wcsearch-found-listings .wcsearch-badge {
+	background-color: #2393ba;
+}
+.wcsearch-content .wcsearch-choose-plan:hover,
+.wcsearch-choose-plan.wcsearch-featured-level {
+	border: 4px solid #2393ba;
+}
+.wcsearch-rating-avgvalue span {
+	background-color: #2393ba;
+}
+.wcsearch-content.wcsearch-search-map-form .wcsearch-search-overlay {
+	background-color: rgba(35,147,186,0.8);
+}
+.wcsearch-field-output-block-string .wcsearch-field-phone-content,
+.wcsearch-field-output-block-website .wcsearch-field-content {
+	color: #2393ba;
+	font-weight: bold;
+}
+.wcsearch-loader:before {
+	border-top-color: #2393ba;
+	border-bottom-color: #2393ba;
+}
+.wcsearch-listings-carousel-button-left,
+.wcsearch-listings-carousel-button-right,
+.wcsearch-remove-from-favourites-list,
+.wcsearch-content .wcsearch-panel-heading.wcsearch-choose-plan-head {
+	background-color: #2393ba;
+}
+.wcsearch-page-header-widget {
+	background-color: #2393ba;
+}
+.wcsearch-search-param {
+	background-color: #2393ba;
+}
+.wcsearch-field-checkbox-item-checked {
+	color: #2393ba;
+}
+
+.wcsearch-listings-block .wcsearch-listing {
+	margin-bottom: 60px;
+}
+
+/* It works with devices width more than 768 pixels. */
+@media screen and (min-width: 768px) {
+	.wcsearch-listings-block .wcsearch-listing-logo-wrap {
+		width: 290px;
+			}
+	.rtl .wcsearch-listings-block .wcsearch-listing-logo-wrap {
+		margin-left: 20px;
+		margin-right: 0;
+	}
+	.wcsearch-listings-block figure.wcsearch-listing-logo .wcsearch-listing-logo-img img {
+		width: 290px;
+	}
+	.wcsearch-listings-list-view .wcsearch-listing-text-content-wrap {
+				margin-left: 290px;
+		margin-right: 0;
+			}
+	.rtl .wcsearch-listings-list-view .wcsearch-listing-text-content-wrap {
+				margin-right: 290px;
+		margin-left: 0;
+			}
+}
+
+.wcsearch-listings-grid figure.wcsearch-listing-logo .wcsearch-listing-logo-img-wrap:before {
+	padding-top: 56.25%;
+}
+
+.wcsearch-content .wcsearch-share-button img {
+	max-width: 40px;
+}
+.wcsearch-content .wcsearch-share-buttons {
+	height: 50px;
+}
+
+/* It works with devices width more than 768 pixels. */
+@media screen and (min-width: 768px) {
+	.wcsearch-single-listing-logo-wrap,
+	.wcsearch-single-review-logo-wrap {
+		max-width: 270px;
+		float: left;
+		margin: 0 20px 20px 0;
+	}
+	.rtl .wcsearch-single-listing-logo-wrap,
+	.rtl .wcsearch-single-review-logo-wrap {
+		float: right;
+		margin: 0 0 20px 20px;
+	}
+	/* temporarily */
+	/*.wcsearch-single-listing-text-content-wrap {
+		margin-left: 290px;
+	}*/
+}
+
+
+figure.wcsearch-listing-logo .wcsearch-listing-logo-img {
+	background-size: cover;
+}

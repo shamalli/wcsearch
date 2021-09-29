@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wcsearch\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-27 15:51+0600\n"
+"POT-Creation-Date: 2021-09-29 16:13+0600\n"
 "PO-Revision-Date: 2021-01-19 18:00+0600\n"
 "Last-Translator: Mihail Chepovskiy <admin@admin.com>\n"
 "Language-Team: English (United States)\n"
@@ -948,19 +948,19 @@ msgstr ""
 msgid "Demo Data Import"
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:7
+#: templates/demo_data_import.tpl.php:7 templates/demo_forms_import.tpl.php:7
 msgid ""
 "1. This is Demo Forms Import tool. This tool will help you to install some "
 "demo forms and demo pages."
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:8
+#: templates/demo_data_import.tpl.php:8 templates/demo_forms_import.tpl.php:8
 msgid ""
 "2. Each time you click import button - it creates new set of search forms "
 "and pages. Avoid duplicates."
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:9
+#: templates/demo_data_import.tpl.php:9 templates/demo_forms_import.tpl.php:9
 #, php-format
 msgid ""
 "3. This is not 100% copy of the demo site. Just gives some examples of "
@@ -968,11 +968,16 @@ msgid ""
 msgstr ""
 
 #: templates/demo_data_import.tpl.php:15
+#: templates/demo_forms_import.tpl.php:15
 msgid "Start import"
 msgstr ""
 
 #: templates/demo_data_import.tpl.php:19
 msgid "Export"
+msgstr ""
+
+#: templates/demo_forms_import.tpl.php:3
+msgid "Demo Forms Import"
 msgstr ""
 
 #: templates/demo_links.tpl.php:2

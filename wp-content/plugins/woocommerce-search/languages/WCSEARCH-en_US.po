@@ -2,9 +2,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: wcsearch\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-27 15:51+0600\n"
-"PO-Revision-Date: 2021-09-27 15:51+0600\n"
-"Last-Translator: Mihail Chepovskiy <admin@admin.com>\n"
+"POT-Creation-Date: 2021-09-29 16:13+0600\n"
+"PO-Revision-Date: 2021-09-29 16:13+0600\n"
+"Last-Translator: \n"
 "Language-Team: English (United States)\n"
 "Language: en_US\n"
 "MIME-Version: 1.0\n"
@@ -13,12 +13,11 @@ msgstr ""
 "X-Generator: Poedit 2.3\n"
 "X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;"
 "_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;_ex:1,2c;"
-"esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;"
-"esc_html_x:1,2c\n"
+"esc_attr__;esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c\n"
 "X-Poedit-Basepath: ..\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Loco-Version: 2.3.0; wp-5.2.3-alpha-45552\n"
+"X-Loco-Version: 2.5.3; wp-5.8.1\n"
 "X-Poedit-SearchPath-0: .\n"
 
 #: classes/ajax_controller.php:73
@@ -947,31 +946,35 @@ msgstr ""
 msgid "Demo Data Import"
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:7
+#: templates/demo_data_import.tpl.php:7 templates/demo_forms_import.tpl.php:7
 msgid ""
 "1. This is Demo Forms Import tool. This tool will help you to install some "
 "demo forms and demo pages."
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:8
+#: templates/demo_data_import.tpl.php:8 templates/demo_forms_import.tpl.php:8
 msgid ""
 "2. Each time you click import button - it creates new set of search forms "
 "and pages. Avoid duplicates."
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:9
+#: templates/demo_data_import.tpl.php:9 templates/demo_forms_import.tpl.php:9
 #, php-format
 msgid ""
 "3. This is not 100% copy of the demo site. Just gives some examples of "
 "search forms. Final view and layout depends on your theme options."
 msgstr ""
 
-#: templates/demo_data_import.tpl.php:15
+#: templates/demo_data_import.tpl.php:15 templates/demo_forms_import.tpl.php:15
 msgid "Start import"
 msgstr ""
 
 #: templates/demo_data_import.tpl.php:19
 msgid "Export"
+msgstr ""
+
+#: templates/demo_forms_import.tpl.php:3
+msgid "Demo Forms Import"
 msgstr ""
 
 #: templates/demo_links.tpl.php:2

@@ -77,6 +77,10 @@ function wcsearch_tax_dropdowns_menu_init($params) {
 			$categories_options['exact_terms'] = $exact_terms;
 		}
 		
+		if ($depth_level == 1 && !$exact_terms) {
+			$categories_options['parent'] = 0;
+		}
+		
 		// we use array_merge with empty array because we need to flush keys in terms array
 		/* if ($count) {
 			$terms = array_merge(

@@ -190,6 +190,7 @@ class wcsearch_ajax_controller {
 			
 			$categories_options = array(
 					'taxonomy' => $tax,
+					'parent' => 0,
 			);
 			
 			$terms = wcsearch_wrapper_get_categories($categories_options);
@@ -202,6 +203,8 @@ class wcsearch_ajax_controller {
 					$selected = '';
 				}
 				$html .= '<option value="' . esc_attr($term->slug) . '" ' . $selected . '>' . $term->name . '</option>';
+				
+				$html .= $this->_get_tax_options($term, 1);
 			}
 			
 			$html .= '<select>';
@@ -211,6 +214,36 @@ class wcsearch_ajax_controller {
 		echo $json;
 		
 		die();
+	}
+	
+	public function _get_tax_options($parent_term, $level) {
+		
+		if ($items = wcsearch_getValue($_REQUEST, 'items', array())) {
+			$items = explode(',', $items);
+		} else {
+			$items = array();
+		}
+		
+		$categories_options = array(
+				'taxonomy' => $parent_term->taxonomy,
+				'parent' => $parent_term->term_id,
+		);
+			
+		$terms = wcsearch_wrapper_get_categories($categories_options);
+		
+		$html = '';
+		foreach ($terms AS $term) {
+			if (in_array($term->term_id, $items) || in_array($term->slug, $items)) {
+				$selected = "selected='selected'";
+			} else {
+				$selected = '';
+			}
+			$html .= '<option value="' . esc_attr($term->slug) . '" ' . $selected . '>' . str_repeat("- ", $level) . $term->name . '</option>';
+		
+			$html .= $this->_get_tax_options($term, $level+1);
+		}
+		
+		return $html;
 	}
 }
 ?>

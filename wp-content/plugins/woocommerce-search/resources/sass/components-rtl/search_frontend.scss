@@ -48,18 +48,14 @@
 	margin-left: 5px;
 }
 
-.wcsearch-search-input-radios-column-2,
-.wcsearch-search-input-checkboxes-column-2,
-.wcsearch-search-input-radios-column-3,
-.wcsearch-search-input-checkboxes-column-3,
-.wcsearch-search-input-radios-column-4,
-.wcsearch-search-input-checkboxes-column-4,
-.wcsearch-search-input-radios-column-5,
-.wcsearch-search-input-checkboxes-column-5 {
+.wcsearch-search-input-terms-column-2,
+.wcsearch-search-input-terms-column-3,
+.wcsearch-search-input-terms-column-4,
+.wcsearch-search-input-terms-column-5 {
 	float: right;
 }
-.wcsearch-search-input-radios-column .wcsearch-radio,
-.wcsearch-search-input-checkboxes-column .wcsearch-checkbox {
+.wcsearch-search-input-terms-column .wcsearch-radio,
+.wcsearch-search-input-terms-column .wcsearch-checkbox {
 	margin: 15px 0 15px 10px !important;
 }
 .wcsearch-form-control.wcsearch-search-input-1,

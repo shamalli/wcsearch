@@ -13,7 +13,8 @@ class wcsearch_search_form {
 	
 	public function __construct() {
 		
-		// random ID needed because there may be more than 1 search form on one page
+		// random ID needed because there may be more than 1 search form on one page,
+		// this is by default, getArgByPostId() then makes it form post ID
 		$this->search_form_id = wcsearch_generateRandomVal();
 	}
 	
@@ -66,6 +67,8 @@ class wcsearch_search_form {
 			}
 		}
 		
+		$this->search_form_id = $post_id;
+		
 		return $this->args;
 	}
 	
@@ -102,6 +105,8 @@ class wcsearch_search_form {
 	}
 	
 	public function outputHiddenFields() {
+		
+		do_action("wcsearch_output_hidden_fields", $this);
 		
 		$search_form_id = wcsearch_getValue($_REQUEST, 'wcsearch_test_form');
 		if ($search_form_id && current_user_can('manage_options')) {
@@ -265,6 +270,7 @@ class wcsearch_search_form {
 			}
 		} else {
 			$search_url = $this->args['target_url'];
+			$options['data-target_url'] = 1;
 		}
 		$search_url = apply_filters('wcsearch_search_url', $search_url, $this);
 		

@@ -3,7 +3,19 @@
 	
 	<?php
 	if ($mode == 'hierarhical_dropdown') {
-
+		
+		if ($placeholders === false) {
+			$taxonomy_obj = get_taxonomy($tax);
+			$placeholder = $taxonomy_obj->labels->singular_name;
+		} elseif (!is_array($placeholders) && json_decode($placeholders)) {
+			$placeholders = json_decode($placeholders);
+			$placeholder = $placeholder[0];
+		} elseif (!empty($placeholders)) {
+			$placeholder = $placeholders;
+		} elseif (!empty($placeholder)) {
+			$placeholders = $placeholder;
+		}
+		
 		$params = array(
 				'tax' => $tax_name,
 				'field_name' => $slug,
@@ -14,6 +26,7 @@
 				'exact_terms' => $exact_terms,
 				'orderby' => $orderby,
 				'order' => $order,
+				'placeholders' => $placeholders,
 				'functionality' => 'wcsearch-heirarhical-dropdown',
 		);
 		wcsearch_heirarhical_dropdowns_menu_init($params);
@@ -31,6 +44,7 @@
 				'exact_terms' => $exact_terms,
 				'orderby' => $orderby,
 				'order' => $order,
+				'placeholder' => $placeholder,
 				'place_id' => wcsearch_get_query_string('place_id'),
 		);
 		
@@ -54,11 +68,11 @@
 		if ($mode == 'dropdown_address') {
 			$params['autocomplete_field'] = 'address';
 			$params['autocomplete_field_value'] = $address_value;
-			//$params['autocomplete_ajax'] = true;
 		}
 		wcsearch_tax_dropdowns_menu_init($params);
 	}
 	?>
 	
-	<?php if ($mode == "dropdown_address") wcsearch_print_suggestions_code($suggestions); ?>
+	<?php if ($mode == "dropdown_address") wcsearch_print_suggestions_code($try_to_search_text, $address_suggestions); ?>
+	<?php if ($mode == "dropdown_keywords") wcsearch_print_suggestions_code($try_to_search_text, $keywords_suggestions); ?>
 </div>

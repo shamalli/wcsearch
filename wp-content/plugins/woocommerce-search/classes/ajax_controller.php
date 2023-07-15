@@ -38,6 +38,8 @@ class wcsearch_ajax_controller {
 			$term = esc_html($_POST['term']);
 			$orderby = esc_html($_POST['orderby'], 'relevance');
 			$order = esc_html($_POST['order'], 'ASC');
+			$do_links = esc_html($_POST['do_links'], true);
+			$do_links_blank = esc_html($_POST['do_links_blank'], 'blank');
 			
 			$args = array(
 					'post_type' => 'product',
@@ -68,9 +70,19 @@ class wcsearch_ajax_controller {
 				$description = $product->get_description();
 				$image = wp_get_attachment_image_url($product->get_image_id(), 'woocommerce_thumbnail');
 				
-				$nofollow = true;
-				$target = apply_filters('wcsearch_listing_title_search_target', 'target="_blank"');
-				$title = '<strong><a href="' . esc_url($permalink) . '" ' . $target . ' title="' . esc_attr__("open product", "WCSEARCH") . '" ' . (($nofollow) ? 'rel="nofollow"' : '') . '>' . esc_html($name) . '</a></strong>';
+				if ($do_links) {
+					$nofollow = true;
+					
+					if ($do_links_blank == 'blank') {
+						$target = apply_filters('wcsearch_listing_title_search_target', 'target="_blank"');
+					}  elseif ($do_links_blank == 'self') {
+						$target = apply_filters('wcsearch_listing_title_search_target', '');
+					}
+					
+					$title = '<strong><a href="' . esc_url($permalink) . '" ' . $target . ' title="' . esc_attr__("open product", "WCSEARCH") . '" ' . (($nofollow) ? 'rel="nofollow"' : '') . '>' . esc_html($name) . '</a></strong>';
+				} else {
+					$title = '<strong>' . esc_html($name) . '</strong>';
+				}
 	
 				$listing_json_field = array();
 				$listing_json_field['title'] = $title;
@@ -95,7 +107,7 @@ class wcsearch_ajax_controller {
 		$tax = wcsearch_getValue($_POST, 'tax');
 		$parent = wcsearch_getValue($_POST, 'parentid');
 		$uID = wcsearch_getValue($_POST, 'uID');
-		$placeholder = wcsearch_getValue($_POST, 'placeholder');
+		$placeholders = wcsearch_getValue($_POST, 'placeholders');
 		$depth_level = wcsearch_getValue($_POST, 'depth_level');
 		$orderby = wcsearch_getValue($_POST, 'orderby');
 		$order = wcsearch_getValue($_POST, 'order');
@@ -105,7 +117,7 @@ class wcsearch_ajax_controller {
 		
 		$args = array(
 				'uID' => $uID,
-				'placeholder' => $placeholder,
+				'placeholders' => $placeholders,
 				'depth_level' => $depth_level,
 				'tax' => $tax,
 				'parent' => $parent,
@@ -159,9 +171,12 @@ class wcsearch_ajax_controller {
 					} elseif (isset($counter['option'])) {
 						$counter_option = $counter['option'];
 						$counter_tags[] = array('counter_option' => $counter_option, 'counter_item' => wcsearch_get_count(array('option' => $counter_option, 'used_by' => $used_by)));
+					} elseif (isset($counter['hours'])) {
+						$counter_hours = $counter['hours'];
+						$counter_tags[] = array('counter_hours' => $counter_hours, 'counter_item' => wcsearch_get_count(array('hours' => $counter_hours, 'used_by' => $used_by)));
 					} elseif (isset($counter['ratings'])) {
-						$counter_option = $counter['ratings'];
-						$counter_tags[] = array('counter_ratings' => $counter_option, 'counter_item' => wcsearch_get_count(array('ratings' => $counter_option, 'used_by' => $used_by)));
+						$counter_ratings = $counter['ratings'];
+						$counter_tags[] = array('counter_ratings' => $counter_ratings, 'counter_item' => wcsearch_get_count(array('ratings' => $counter_ratings, 'used_by' => $used_by)));
 					}
 				}
 			}
@@ -188,6 +203,17 @@ class wcsearch_ajax_controller {
 				$items = array();
 			}
 			
+			// "categories" instead of "w2dc-category",
+			// "locations" instead of "w2dc-location",
+			// "tags" instead of "w2dc-tag"
+			$taxes = wcsearch_get_all_taxonomies();
+			foreach ($taxes AS $tax_slug=>$tax_synonym) {
+				if ($tax == $tax_synonym) {
+					$tax = $tax_slug;
+					break;
+				}
+			}
+			
 			$categories_options = array(
 					'taxonomy' => $tax,
 					'parent' => 0,
@@ -202,7 +228,7 @@ class wcsearch_ajax_controller {
 				} else {
 					$selected = '';
 				}
-				$html .= '<option value="' . esc_attr($term->slug) . '" ' . $selected . '>' . $term->name . '</option>';
+				$html .= '<option value="' . esc_attr($term->term_id) . '" ' . $selected . '>' . $term->name . '</option>';
 				
 				$html .= $this->_get_tax_options($term, 1);
 			}
@@ -224,8 +250,20 @@ class wcsearch_ajax_controller {
 			$items = array();
 		}
 		
+		$tax = $parent_term->taxonomy;
+		// "categories" instead of "w2dc-category",
+		// "locations" instead of "w2dc-location",
+		// "tags" instead of "w2dc-tag"
+		$taxes = wcsearch_get_all_taxonomies();
+		foreach ($taxes AS $tax_slug=>$tax_synonym) {
+			if ($tax == $tax_synonym) {
+				$tax = $tax_slug;
+				break;
+			}
+		}
+		
 		$categories_options = array(
-				'taxonomy' => $parent_term->taxonomy,
+				'taxonomy' => $tax,
 				'parent' => $parent_term->term_id,
 		);
 			
@@ -238,7 +276,7 @@ class wcsearch_ajax_controller {
 			} else {
 				$selected = '';
 			}
-			$html .= '<option value="' . esc_attr($term->slug) . '" ' . $selected . '>' . str_repeat("- ", $level) . $term->name . '</option>';
+			$html .= '<option value="' . esc_attr($term->term_id) . '" ' . $selected . '>' . str_repeat("- ", $level) . $term->name . '</option>';
 		
 			$html .= $this->_get_tax_options($term, $level+1);
 		}

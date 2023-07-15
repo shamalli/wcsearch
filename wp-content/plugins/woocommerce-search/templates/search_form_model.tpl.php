@@ -69,10 +69,10 @@ global $wcsearch_model_options;
 
 	var wcsearch_model_columns_counter = <?php echo esc_attr($search_form_data['columns_num']); ?>;
 
-	$(document).on("mouseenter", ".wcsearch-checkbox, wcsearch-radio", function() {
+	$(document).on("mouseenter", ".wcsearch-checkbox, .wcsearch-radio, .wcsearch-search-term-button", function() {
 		$(this).find(".wcsearch-model-options-link").show();
 	})
-	.on("mouseleave", ".wcsearch-checkbox, wcsearch-radio", function() {
+	.on("mouseleave", ".wcsearch-checkbox, .wcsearch-radio, .wcsearch-search-term-button", function() {
 		$(this).find(".wcsearch-model-options-link").hide();
 	});
 
@@ -132,7 +132,7 @@ global $wcsearch_model_options;
 
 					wcsearch_highlight_placeholder(placeholder);
 
-					wcsearch_build_options(placeholder, null);
+					wcsearch_build_options(placeholder, null, null);
 
 					wcsearch_setup_terms_separators();
 					
@@ -143,6 +143,9 @@ global $wcsearch_model_options;
 	};
 
 	window.wcsearch_highlight_placeholder = function(placeholder) {
+		// remove term selection
+		$(".wcsearch-term-wrapper-highlight").removeClass("wcsearch-term-wrapper-highlight");
+		
 		$(".wcsearch-search-model-placeholder-highlight").removeClass("wcsearch-search-model-placeholder-highlight");
 		placeholder.addClass("wcsearch-search-model-placeholder-highlight");
 	};
@@ -453,7 +456,60 @@ global $wcsearch_model_options;
 		}
 	});
 	
-	window.wcsearch_build_options = function(placeholder, term_id) {
+	window.wcsearch_unset_term_options = function(input, term_id, option_name) {
+		if (input.attr("data-terms_options") !== false) {
+			var terms_options = "";
+			if (input.attr("data-terms_options")) {
+				terms_options = JSON.parse(input.attr("data-terms_options"));
+			}
+
+			if (typeof terms_options[term_id] != "undefined") {
+				if (typeof terms_options[term_id][option_name] != "undefined") {
+					delete terms_options[term_id][option_name];
+				}
+				if ($.isEmptyObject(terms_options[term_id])) {
+					delete terms_options[term_id];
+				}
+				if ($.isEmptyObject(terms_options)) {
+					input.attr("data-terms_options", "");
+				} else {
+					input.attr("data-terms_options", JSON.stringify(terms_options));
+				}
+			}
+		}
+	}
+	
+	window.wcsearch_set_term_options = function(input, term_id, options) {
+		if (input.attr("data-terms_options") !== false) {
+			var terms_options = {};
+			if (input.attr("data-terms_options")) {
+				terms_options = JSON.parse(input.attr("data-terms_options"));
+			}
+
+			if (typeof terms_options[term_id] != "undefined") {
+				$.extend(terms_options[term_id], options);
+			} else {
+				terms_options[term_id] = options;
+			}
+
+			input.attr("data-terms_options", JSON.stringify(terms_options));
+		}
+	}
+	
+	window.wcsearch_get_term_options = function(input, term_id) {
+		if (input.attr("data-terms_options") !== false) {
+			var terms_options = '';
+			if (input.attr("data-terms_options")) {
+				terms_options = JSON.parse(input.attr("data-terms_options"));
+			}
+
+			if (typeof terms_options[term_id] != "undefined") {
+				return terms_options[term_id];
+			}
+		}
+	}
+	
+	window.wcsearch_build_options = function(placeholder, term_id, term_name) {
 		var input = placeholder.find(".wcsearch-search-model-input");
 
 		if (input.length) {
@@ -473,30 +529,48 @@ global $wcsearch_model_options;
 				options_form.attr('data-type', type);
 				options_form.attr('data-tax', tax);
 
-				/* if (term_id) {
-					options_form.append('<h4><?php esc_html_e("Term options:", "WCSEARCH"); ?> '+field_name+'</h4>');
+				if (term_id) {
+					var heading = $("<h4/>").html('<a href="javascript:void(0);"><?php esc_html_e("Element:", "WCSEARCH"); ?> '+field_name+'</a>');
+					heading.on("click", function() {
+						placeholder.trigger("click");
+					});
+					options_form.append(heading);
+					options_form.append('<h4><?php esc_html_e("Item:", "WCSEARCH"); ?> '+term_name+'</h4>');
 					
 					var options = [
-							{
-								type: "string",
-								name: "text",
-								title: "<?php esc_html_e("Item label text", "WCSEARCH"); ?>"
-							},
 							{
 								type: "color",
 								name: "color",
 								title: "<?php esc_html_e("Item color", "WCSEARCH"); ?>"
 							}
 					];
-				} else {*/
+				} else {
 					var options = wcsearch_get_options(type, tax);
-				//}
+				}
 
 				// build options one-by-one
 				$.each(options, function(i, option) {
 					if (typeof option.type != "undefined") {
 
-						var value = input.data(option.name);
+						var value = '';
+						if (term_id) {
+							var term_options = wcsearch_get_term_options(input, term_id);
+
+							if (term_options && typeof term_options[option.name] != "undefined") {
+								value = term_options[option.name];
+							}
+						} else {
+							value = input.attr("data-"+option.name);
+						}
+
+						if (option.type == "hidden") {
+							var field = $('<input type="hidden" name="'+option.name+'" />');
+							// this escapes value, instead of 'value="'+value+'"'
+							field.val(value);
+							options_form.append(field);
+							
+							return;
+						}
 
 						var row = $("<div/>").addClass("wcsearch-search-model-options-row");
 
@@ -506,19 +580,44 @@ global $wcsearch_model_options;
 
 						var column_one = $("<div/>").addClass("wcsearch-search-model-options-column-one");
 						var column_two = $("<div/>").addClass("wcsearch-search-model-options-column-two");
-						column_one.append('<div class="wcsearch-search-model-options-column-title">'+option.title+'</div>');
+						var title = $("<div/>").addClass("wcsearch-search-model-options-column-title").html(option.title);
+						var name = option.name;
+						var multi_button = '';
+						/*if (typeof option.multi != "undefined" && option.multi) {
+							name = name + '[]';
+							multi_button = $("<span/>").addClass("wcsearch-search-model-options-multi-button wcsearch-fa wcsearch-fa-plus");
+							multi_button.attr("title", "<?php esc_html_e("Add", "WCSEARCH"); ?> " + option.title);
+							multi_button.on("click", function(e) {
+								var row_old = $(this).parents(".wcsearch-search-model-options-row");
+								var row_new = $("<div/>").addClass("wcsearch-search-model-options-row");
+								var column_one_empty = $("<div/>").addClass("wcsearch-search-model-options-column-one");
+								var title_empty = $("<div/>").addClass("wcsearch-search-model-options-column-title");
+								column_one_empty.append(title_empty);
+								var column_two_copy = row_old.find(".wcsearch-search-model-options-column-two").clone();
+								row_new.append(column_one_empty);
+								row_new.append(column_two_copy);
+
+								row_new.insertAfter(row_old);
+								
+								//options_form.append(row_new);
+								console.log($(this));
+								console.log(column_two_copy);
+							});
+							title.append(multi_button);
+						}*/
+						column_one.append(title);
 						if (typeof option.description != "undefined") {
 							column_one.append('<div class="wcsearch-search-model-options-column-description">'+option.description+'</div>');
 						}
 						
 						if (option.type == "string") {
-							var field = $('<input type="text" class="wcsearch-form-control wcsearch-search-model-options-input" name="'+option.name+'" />');
+							var field = $('<input type="text" class="wcsearch-form-control wcsearch-search-model-options-input" name="'+name+'" />');
 							// this escapes value, instead of 'value="'+value+'"'
 							field.val(value);
 							column_two.append(field);
 						}
 						if (option.type == "select") {
-							var field = $('<select class="wcsearch-form-control wcsearch-search-model-options-input" name="'+option.name+'" /> </select>');
+							var field = $('<select class="wcsearch-form-control wcsearch-search-model-options-input" name="'+name+'" /> </select>');
 
 							$.each(option.options, function(index, option_val) {
 								var default_value = '';
@@ -531,17 +630,19 @@ global $wcsearch_model_options;
 							column_two.append(field);
 						}
 						if (option.type == "color") {
+							var input_id = input.attr("id");
 							var class_name = 'wcsearch-seach-model-'+slug+'-'+option.name;
-							var field = $('<input type="text" class="'+class_name+'" name="'+option.name+'" />');
+							var field = $('<input type="text" class="'+class_name+'" name="'+name+'" />');
 							// this escapes value, instead of 'value="'+value+'"'
 							field.val(value);
 							column_two.append(field);
 							
 							var fn_to_call = function() {
-								var fn_name = 'wcsearch_callback_'+slug+'_'+option.name;
-	
-								wcsearch_apply_color($("."+class_name), window[fn_name]);
-								window[fn_name](value);
+								var params = {'term_id': term_id};
+								var fn_name = 'wcsearch_callback_'+type+'_'+option.name+'_'+input_id;
+
+								wcsearch_apply_color($("."+class_name), window[fn_name], params);
+								window[fn_name](value, params);
 							};
 							funcs_to_call.push(fn_to_call);
 						}
@@ -551,7 +652,7 @@ global $wcsearch_model_options;
 
 							var items = input.data("exact_terms");
 							
-							var field = $('<select class="wcsearch-form-control wcsearch-search-model-options-input" name="'+option.name+'" /> </select>');
+							var field = $('<select class="wcsearch-form-control wcsearch-search-model-options-input" name="'+name+'" /> </select>');
 
 							var tax_field_name = "exact_terms";
 							var tax_field_class = "wcsearch-exact-terms";
@@ -619,7 +720,7 @@ global $wcsearch_model_options;
 
 							var items = input.data("dependency_items");
 							
-							var field = $('<select class="wcsearch-form-control wcsearch-search-model-options-input" name="'+option.name+'" /> </select>');
+							var field = $('<select class="wcsearch-form-control wcsearch-search-model-options-input" name="'+name+'" /> </select>');
 
 							var tax_field_name = "dependency_items";
 							var tax_field_class = "wcsearch-tax-dependency";
@@ -692,13 +793,22 @@ global $wcsearch_model_options;
 
 						wcsearch_ajax_loader_target_show(placeholder);
 
-						var post_params = options_form.serializeArray();
+						if (!term_id) {
+							var post_params = options_form.serializeArray();
 
-						post_params.push({ name: "type", value: type });
-						post_params.push({ name: "tax", value: input.attr("data-tax") });
-						post_params.push({ name: "slug", value: input.attr("data-slug") });
-						post_params.push({ name: "values", value: input.attr("data-values") });
-						post_params.push({ name: "used_by", value: input.attr("data-used_by") });
+							post_params.push({ name: "type", value: type });
+							post_params.push({ name: "tax", value: input.attr("data-tax") });
+							post_params.push({ name: "slug", value: input.attr("data-slug") });
+							post_params.push({ name: "values", value: input.attr("data-values") });
+							post_params.push({ name: "used_by", value: input.attr("data-used_by") });
+						} else {
+							var post_params = [];
+							$.each(input.data(), function(option_name, option_value) {
+								post_params.push({ name: option_name, value: input.attr("data-"+option_name) });
+							});
+							//post_params.push({ name: "selected_term_id", value: term_id });
+						}
+
 						post_params.push({ name: "action", value: "wcsearch_get_search_model" });
 						$.post(
 							wcsearch_js_objects.ajaxurl,
@@ -708,6 +818,9 @@ global $wcsearch_model_options;
 									input.replaceWith(response_from_the_action_function.html);
 									input = placeholder.find(".wcsearch-search-model-input");
 									wcsearch_make_input_draggable(input);
+
+									// set new input ID
+									wcsearch_insert_param_in_uri("input", input.attr("id"));
 								}
 								wcsearch_ajax_loader_target_hide(placeholder.attr("id"));
 
@@ -802,6 +915,9 @@ global $wcsearch_model_options;
 			if (placeholder.hasClass("wcsearch-search-model-placeholder-column-4")) {
 				columns = 4;
 			}
+			if (placeholder.hasClass("wcsearch-search-model-placeholder-column-5")) {
+				columns = 5;
+			}
 
 			var rows_number = placeholder.attr("data-grid-row-end");
 			if (!rows_number || rows_number == 'auto') {
@@ -825,9 +941,9 @@ global $wcsearch_model_options;
 				}
 				$.each(input.data(), function(option_name, option_value) {
 					// Assign values with their structure
-					if (typeof option_value != "object") {
-						p_obj.input[option_name] = option_value;
-					}
+					//if (typeof option_value != "object") {
+						p_obj.input[option_name] = input.attr("data-"+option_name);
+					//}
 				});
 				if (input.attr("data-values") !== false) {
 					p_obj.input.values = input.attr("data-values");
@@ -849,6 +965,7 @@ global $wcsearch_model_options;
 		wcsearch_ajax_loader_target_show(placeholder_to_add);
 		
 		var post_params = $.extend({ "action": "wcsearch_get_search_model" }, element_data);
+		post_params['new_field'] = true;
 		$.each(wcsearch_model_options[type], function(i, opt) {
 			post_params[opt.name] = opt.value;
 		});
@@ -914,15 +1031,15 @@ global $wcsearch_model_options;
 		});
 	}
 
-	window.wcsearch_apply_color = function(color_picker, callback) {
+	window.wcsearch_apply_color = function(color_picker, callback, params) {
 		color_picker.wpColorPicker({
 			width: 200,
 			change: function(event, ui) {
 				var color_input = ui.color.toString();
-				callback(color_input);
+				callback(color_input, params);
 			},
 			clear: function() {
-				callback(false);
+				callback(false, params);
 			}
 		});
 	}
@@ -1028,8 +1145,20 @@ global $wcsearch_model_options;
 		// init inputs and placeholders
 		wcsearch_make_input_draggable($(".wcsearch-search-model-input"));
 		wcsearch_setup_placeholder($(".wcsearch-search-model-placeholder"));
-		
-		wcsearch_open_tab('elements');
+
+		var tab = wcsearch_get_uri_param("tab");
+
+		// options of opened element
+		var input_id = wcsearch_get_uri_param("input");
+		if (tab == 'options' && input_id && $("#"+input_id).length) {
+			var placeholder = $("#"+input_id).parent();
+			placeholder.trigger("click");
+		}
+
+		// open tab
+		if (tab) {
+			wcsearch_open_tab(tab);
+		}
 		
 		// set input by default value
 		wcsearch_model_update_columns();
@@ -1050,6 +1179,8 @@ global $wcsearch_model_options;
 
 		$(".wcsearch-search-tab-title").removeClass("wcsearch-search-tab-active");
 		$(".wcsearch-search-tab-title[data-tab="+tab+"]").addClass("wcsearch-search-tab-active");
+
+		wcsearch_insert_param_in_uri("tab", tab);
 	}
 	
 	$(function() {
@@ -1057,17 +1188,23 @@ global $wcsearch_model_options;
 		
 		$(".wcsearch-search-model-input-field, .wcsearch-search-model-input-radios input").disableSelection();
 
-		$("body").on("click", ".wcsearch-search-model-placeholder", function(e) {
+		$(document).on("click", ".wcsearch-search-model-placeholder", function(e) {
 			wcsearch_highlight_placeholder($(this));
 			
 			var input = $(this).find(".wcsearch-search-model-input");
 			if (input.length) {
 				var term_id;
+				var term_name;
 				if ($(e.target).is(".wcsearch-model-options-link")) {
 					term_id = $(e.target).data("term-id");
+					term_name = $(e.target).data("term-name");
+
+					$(e.target).parents(".wcsearch-term-wrapper").addClass("wcsearch-term-wrapper-highlight");
 				}
+
+				wcsearch_insert_param_in_uri("input", input.attr("id"));
 				
-				wcsearch_build_options($(this), term_id);
+				wcsearch_build_options($(this), term_id, term_name);
 			} else {
 				wcsearch_open_tab("elements");
 			}
@@ -1267,7 +1404,7 @@ global $wcsearch_model_options;
 				</div>
 			</div>
 			<div class="wcsearch-search-tab-content wcsearch-search-tab-elements" data-tab="elements">
-				<?php if (($all_plugins = wcsearch_is_standalone_plugin()) && count($all_plugins) > 1): ?>
+				<?php if (($all_plugins = wcsearch_is_standalone_plugin()) && is_array($all_plugins) && count($all_plugins) > 1): ?>
 				<div class="wcsearch-search-model-options-row wcsearch-search-model-used-by">
 					<div class="wcsearch-search-model-options-column">
 						<?php esc_html_e('This search form is used by', 'WCSEARCH'); ?>
@@ -1306,6 +1443,9 @@ global $wcsearch_model_options;
 							<label for="auto_submit" class="wcsearch-search-model-options-column-title">
 								<?php esc_html_e('Auto-submit', 'WCSEARCH'); ?>
 							</label>
+							<div class="wcsearch-search-model-options-column-description">
+								<?php esc_html_e('No search button required', 'WCSEARCH'); ?>
+							</div>
 						</div>
 						<div class="wcsearch-search-model-options-column-two">
 							<input type="checkbox" id="auto_submit" name="auto_submit" class="wcsearch-seach-model-auto-submit-chbx" value="1" autocomplete="off" <?php checked($search_form_data['auto_submit'], true); ?> />
@@ -1316,9 +1456,25 @@ global $wcsearch_model_options;
 							<label for="use_ajax" class="wcsearch-search-model-options-column-title">
 								<?php esc_html_e('Use AJAX', 'WCSEARCH'); ?>
 							</label>
+							<div class="wcsearch-search-model-options-column-description">
+								<?php esc_html_e('or enter target URL', 'WCSEARCH'); ?>
+							</div>
 						</div>
 						<div class="wcsearch-search-model-options-column-two">
 							<input type="checkbox" id="use_ajax" name="use_ajax" class="wcsearch-seach-model-useajax-chbx" value="1" autocomplete="off" <?php checked($search_form_data['use_ajax'], true); ?> />
+						</div>
+					</div>
+					<div class="wcsearch-search-model-options-row">
+						<div class="wcsearch-search-model-options-column-one">
+							<label for="target_url" class="wcsearch-search-model-options-column-title">
+								<?php esc_html_e('Target URL', 'WCSEARCH'); ?>
+							</label>
+							<div class="wcsearch-search-model-options-column-description">
+								<?php esc_html_e('Submit form to this URL', 'WCSEARCH'); ?>
+							</div>
+						</div>
+						<div class="wcsearch-search-model-options-column-two">
+							<input type="text" id="target_url" name="target_url" class="wcsearch-seach-target-url" value="<?php echo $search_form_data['target_url']; ?>" autocomplete="off" />
 						</div>
 					</div>
 					<div class="wcsearch-search-model-options-row">
@@ -1385,7 +1541,7 @@ global $wcsearch_model_options;
 					<div class="wcsearch-search-model-options-row">
 						<div class="wcsearch-search-model-options-column-one">
 							<label for="scroll_to" class="wcsearch-search-model-options-column-title">
-								<?php esc_html_e('Scroll to products after submit', 'WCSEARCH'); ?>
+								<?php esc_html_e('Scroll to results after submit', 'WCSEARCH'); ?>
 							</label>
 						</div>
 						<div class="wcsearch-search-model-options-column-two">
@@ -1412,19 +1568,6 @@ global $wcsearch_model_options;
 							<input type="text" id="sticky_scroll_toppadding" name="sticky_scroll_toppadding" class="wcsearch-seach-sticky-scroll-toppadding" value="<?php echo $search_form_data['sticky_scroll_toppadding']; ?>" autocomplete="off" />
 						</div>
 					</div>
-					<div class="wcsearch-search-model-options-row">
-						<div class="wcsearch-search-model-options-column-one">
-							<label for="target_url" class="wcsearch-search-model-options-column-title">
-								<?php esc_html_e('Target URL', 'WCSEARCH'); ?>
-							</label>
-							<div class="wcsearch-search-model-options-column-description">
-								<?php esc_html_e('Submit form to this URL (optional)', 'WCSEARCH'); ?>
-							</div>
-						</div>
-						<div class="wcsearch-search-model-options-column-two">
-							<input type="text" id="target_url" name="target_url" class="wcsearch-seach-target-url" value="<?php echo $search_form_data['target_url']; ?>" autocomplete="off" />
-						</div>
-					</div>
 				</div>
 			</div>
 			<div class="wcsearch-search-tab-content wcsearch-search-tab-options" data-tab="options" style="display: none;">
@@ -1433,7 +1576,7 @@ global $wcsearch_model_options;
 		<div class="wcsearch-search-model-bottom-buttons">
 			<input type="hidden" name="post_status" value="publish" />
 			<input type="submit" class="wcsearch-btn wcsearch-btn-primary wcsearch-submit-model" value="<?php esc_attr_e('Save form', 'WCSEARCH'); ?>" name="submit" />
-			<?php if (wcsearch_is_woo_active()): ?>
+			<?php if (wcsearch_is_woo_active() && $search_form_data['used_by'] == 'wc'): ?>
 			<a target="_blank" href="<?php echo add_query_arg('wcsearch_test_form', $search_form_model->id, wc_get_page_permalink( 'shop' )); ?>" class="wcsearch-btn wcsearch-btn-primary"><?php esc_attr_e('Test form', 'WCSEARCH'); ?></a>
 			<?php endif; ?>
 		</div>

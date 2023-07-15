@@ -11,5 +11,5 @@
 	wcsearch_tax_dropdowns_menu_init($params);
 	?>
 	
-	<?php wcsearch_print_suggestions_code($suggestions); ?>
+	<?php wcsearch_print_suggestions_code($try_to_search_text, $keywords_suggestions); ?>
 </div>

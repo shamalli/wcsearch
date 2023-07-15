@@ -27,28 +27,34 @@ function wcsearch_query_args_price($q_args, $args) {
 			);
 		} elseif (count(array_filter($price)) == 1) {
 			if (is_numeric($price[0])) {
-				$min_price = $price[0];
-	
-				$q_args['meta_query'] = array(
-						array(
-								'key' => '_price',
-								'value' => $min_price,
-								'compare' => '>=',
-								'type' => 'DECIMAL',
-						)
+				$min_number = $price[0];
+					
+				$q_args['meta_query'][] = array(
+						'key' => '_price',
+						'value' => $min_number,
+						'compare' => '>=',
+						'type' => 'DECIMAL',
 				);
 			} elseif (is_numeric($price[1])) {
-				$max_price = $price[1];
-	
-				$q_args['meta_query'] = array(
-						array(
-								'key' => '_price',
-								'value' => $max_price,
-								'compare' => '<=',
-								'type' => 'DECIMAL',
-						)
+				$max_number = $price[1];
+					
+				$q_args['meta_query'][] = array(
+						'key' => '_price',
+						'value' => $max_number,
+						'compare' => '<=',
+						'type' => 'DECIMAL',
 				);
 			}
+				
+			$q_args['meta_query'][] = array(
+					'relation' => 'AND',
+					array(
+							'key' => '_price',
+							'compare' => '>=',
+							'value' => '0',
+							'type' => 'DECIMAL',
+					),
+			);
 		}
 	}
 	

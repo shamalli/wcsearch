@@ -20,7 +20,7 @@ class wcsearch_products_controller {
 		$query = new wcsearch_query($this->args);
 		$this->query = $query->get_query();
 		
-		apply_filters('wcsearch_productscontroller_construct', $this);
+		apply_filters('wcsearch_products_controller_construct', $this);
 	}
 	
 	public function woocommerce_pagination_args($args) {

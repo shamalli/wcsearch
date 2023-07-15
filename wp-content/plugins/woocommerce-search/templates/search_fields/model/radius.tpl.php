@@ -7,8 +7,8 @@
 			'values' => $values,
 			'slug' => 'radius',
 			'show_scale' => $show_scale,
-			'odd_even_labels' => false,
-			'string_label' => esc_html__("Search in radius ", "WCSEARCH"),
+			'odd_even_labels' => $odd_even_labels,
+			'string_label' => (esc_html__("Search in radius ", "WCSEARCH") != 'Search in radius ' ? esc_html__("Search in radius ", "WCSEARCH") : $string_label),
 		)
 	);
 	?>

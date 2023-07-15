@@ -37,7 +37,7 @@ function wcsearch_query_args_orderby($q_args, $args) {
 			case 'rating' :
 				$orderby = "meta_value_num {$wpdb->posts}.ID";
 				$order = 'DESC';
-				$meta_key = '_wc_average_rating';
+				$meta_key = apply_filters('wcsearch_wc_rating_order_meta_key', '_wc_average_rating');
 				break;
 			case 'title' :
 				$orderby = 'title';

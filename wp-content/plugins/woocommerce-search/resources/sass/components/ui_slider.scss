@@ -4,6 +4,9 @@
 	.ui-slider .ui-slider-handle:after {
 		content: none;
 	}
+	.ui-slider .ui-slider-handle:last-child {
+		transform: none;
+	}
 	.ui-slider .ui-slider-handle {
 		z-index: 1 !important;
 		cursor: pointer;

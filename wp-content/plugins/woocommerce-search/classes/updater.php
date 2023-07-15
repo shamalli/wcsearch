@@ -18,6 +18,12 @@ function wcsearch_getUpdateDocsLink() {
 function wcsearch_getVersionLink() {
 	return 'https://www.salephpscripts.com/wordpress-search/version/';
 }
+function wcsearch_getUpdateSupportLink() {
+	return 'https://salephpscripts.com/support-renew';
+}
+function wcsearch_getPurchaseLink() {
+	return 'https://salephpscripts.com/license-purchase?product=wcsearch';
+}
 function wcsearch_getAccessToken() {
 	return 'R0qSjwSjti1fvlnVB7Kt1rNKgz2cdAYE';
 }
@@ -26,6 +32,7 @@ class wcsearch_updater {
 	private $slug; // plugin slug
 	private $plugin_file; // __FILE__ of our plugin
 	private $envato_res;
+	private $salephpscripts_res;
 	
 	private $plugin_data;
 
@@ -104,6 +111,30 @@ class wcsearch_updater {
 	}
 	
 	public function get_plugin_info($purchase_code) {
+		
+		if ($purchase_code) {
+			$url = "https://salephpscripts.com/license-check?purchase_code=" . $purchase_code;
+			$curl = curl_init($url);
+		
+			$header = array();
+			$header[] = 'User-Agent: Purchase code verification on ' . get_bloginfo();
+			$header[] = 'timeout: 20';
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($curl, CURLOPT_HTTPHEADER,$header);
+			curl_setopt($curl, CURLOPT_REFERER, $_SERVER["HTTP_HOST"]);
+			curl_setopt($curl, CURLOPT_HEADER, 0);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($curl, CURLOPT_ENCODING, 'UTF-8');
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 20);
+			curl_setopt($curl, CURLOPT_TIMEOUT, 20);
+		
+			if (($salephpscripts_res = curl_exec($curl)) !== false) {
+				curl_close($curl);
+				return $salephpscripts_res;
+			}
+		}
+		
 		if ($purchase_code) {
 			$url = "https://api.envato.com/v3/market/author/sale?code=".$purchase_code;
 			$curl = curl_init($url);
@@ -131,27 +162,64 @@ class wcsearch_updater {
 	}
 	
 	public function verify_license($purchase_code) {
-		$envatoRes = $this->get_plugin_info($purchase_code);
+		$res = $this->get_plugin_info($purchase_code);
 	
-		if (isset($envatoRes->item->id) && $envatoRes->item->id == wcsearch_getPluginID()) {
+		if (is_numeric($res)) {
 			return true;
-		} elseif (isset($envatoRes->error)) {
-			global $wcsearch_license_verify_error;
-			error_log($envatoRes->error . ' ' . $envatoRes->description);
-			$wcsearch_license_verify_error = "Envato: " . $envatoRes->error . ' ' . $envatoRes->description;
-		} elseif (isset($envatoRes->message)) {
-			global $wcsearch_license_verify_error;
-			$wcsearch_license_verify_error = "Envato: " . $envatoRes->message;
-		} elseif (isset($envatoRes->Message)) {
-			global $wcsearch_license_verify_error;
-			$wcsearch_license_verify_error = "Envato: " . $envatoRes->Message;
 		}
 	
-		// User is not authorized to access this resource with an explicit deny - purchase code is wrong
-		// Unauthorized - access token is wrong
+		if (isset($res->item->id) && $res->item->id == w2dc_getPluginID()) {
+			return true;
+		} elseif (isset($res->error)) {
+			global $w2dc_license_verify_error;
+			error_log($res->error . ' ' . $res->description);
+			$w2dc_license_verify_error = "Envato: " . $res->error . ' ' . $res->description;
+		} elseif (isset($res->message)) {
+			global $w2dc_license_verify_error;
+			$w2dc_license_verify_error = "Envato: " . $res->message;
+		} elseif (isset($res->Message)) {
+			global $w2dc_license_verify_error;
+			$w2dc_license_verify_error = "Envato: " . $res->Message;
+		}
+	
+		/*
+		 * User is not authorized to access this resource with an explicit deny - purchase code is wrong
+		 * Unauthorized - access token is wrong
+		 * 
+		 * */
 	}
 	
 	public function getDownload_url($debug = false) {
+		
+		if ($this->purchase_code) {
+			$url = "https://salephpscripts.com/license-get-download-url?purchase_code=" . $this->purchase_code;
+			$curl = curl_init($url);
+		
+			$header = array();
+			$header[] = 'User-Agent: Purchase code verification on ' . get_bloginfo();
+			$header[] = 'timeout: 20';
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($curl, CURLOPT_HTTPHEADER,$header);
+			curl_setopt($curl, CURLOPT_REFERER, $_SERVER["HTTP_HOST"]);
+			curl_setopt($curl, CURLOPT_HEADER, 0);
+			curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($curl, CURLOPT_ENCODING, 'UTF-8');
+			curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, 0);
+			curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 20);
+			curl_setopt($curl, CURLOPT_TIMEOUT, 20);
+		
+			$this->salephpscripts_res = curl_exec($curl);
+			curl_close($curl);
+				
+			if ($debug) {
+				var_dump($this->salephpscripts_res);
+			}
+				
+			if (!empty($this->salephpscripts_res)) {
+				return $this->salephpscripts_res;
+			}
+		}
+		
 		if ($this->purchase_code && $this->api_key) {
 			$url = "https://api.envato.com/v3/market/buyer/download?purchase_code=" . $this->purchase_code;
 			$curl = curl_init($url);

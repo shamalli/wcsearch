@@ -1,10 +1,10 @@
 <?php
 /*
 Plugin Name: WooCommerce Search & Filter
-Plugin URI: https://www.salephpscripts.com/woocommerce-search/
+Plugin URI: https://www.salephpscripts.com/wordpress-search/
 Description: Search and filter WooCommerce products
-Version: 1.2.0
-WC tested up to: 5.7
+Version: 1.2.8
+WC tested up to: 6.4
 Author: salephpscripts.com
 Author URI: https://www.salephpscripts.com
 License: GPLv2 or any later version
@@ -14,7 +14,7 @@ if (defined("WCSEARCH_VERSION")) {
 	return ;
 }
 
-define('WCSEARCH_VERSION', '1.2.0');
+define('WCSEARCH_VERSION', '1.2.8');
 
 define('WCSEARCH_PATH', plugin_dir_path(__FILE__));
 define('WCSEARCH_URL', plugins_url('/', __FILE__));
@@ -135,36 +135,48 @@ class wcsearch_plugin {
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts_styles'));
 		add_action('wp_enqueue_scripts', array($this, 'enqueue_scripts_styles_custom'), 9999);
 		
-		add_filter('wpseo_sitemap_post_type_archive_link', array($this, 'exclude_post_type_archive_link'), 10, 2);
-		
-		add_filter('plugin_row_meta', array($this, 'plugin_row_meta'), 10, 2);
-		add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'plugin_action_links'));
-		
-		// include search form on a shop page
-		add_action('woocommerce_before_shop_loop', array($this, 'search_form_on_shop_page'), 0);
-		add_action('woocommerce_before_shop_loop', array($this, 'open_wrap_woo_products'), 1);
-		add_action('woocommerce_after_shop_loop', array($this, 'close_wrap_woo_products'), 100);
-		add_action('woocommerce_before_shop_loop', array($this, 'visible_search_params'), 3);
-		
-		add_action('woocommerce_no_products_found', array($this, 'search_form_on_shop_page'), 2);
-		add_action('woocommerce_no_products_found', array($this, 'open_wrap_woo_products'), 2);
-		add_action('woocommerce_no_products_found', array($this, 'close_wrap_woo_products'), 100);
-		add_action('woocommerce_no_products_found', array($this, 'visible_search_params'), 3);
-		
-		add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'search_form_on_shop_page'), 2);
-		add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'open_wrap_woo_products'), 2);
-		add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'close_wrap_woo_products'), 100);
-		add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'visible_search_params'), 3);
-		
-		add_action('woocommerce_update_product', array($this, 'clear_count_cache'));
-		add_action('woocommerce_new_product', array($this, 'clear_count_cache'));
-		add_action('wp_trash_post', array($this, 'trash_post'));
-		add_action('untrashed_post', array($this, 'trash_post'));
-		
-		// follow search query in default shop page loop
-		add_action('woocommerce_product_query', array($this, "woocommerce_product_query"));
-		
-		add_action('wp_footer', array($this, 'elementor_support_wp_footer'));
+		if (wcsearch_is_standalone_plugin()) {
+			add_filter('wpseo_sitemap_post_type_archive_link', array($this, 'exclude_post_type_archive_link'), 10, 2);
+			
+			add_filter('plugin_row_meta', array($this, 'plugin_row_meta'), 10, 2);
+			add_filter('plugin_action_links_' . plugin_basename(__FILE__), array($this, 'plugin_action_links'));
+			
+			// include search form on a shop page
+			add_action('woocommerce_before_shop_loop', array($this, 'search_form_on_shop_page'), 0);
+			add_action('woocommerce_before_shop_loop', array($this, 'open_wrap_woo_products'), 1);
+			add_action('woocommerce_after_shop_loop', array($this, 'close_wrap_woo_products'), 100);
+			add_action('woocommerce_before_shop_loop', array($this, 'visible_search_params'), 3);
+			
+			add_action('woocommerce_no_products_found', array($this, 'search_form_on_shop_page'), 2);
+			add_action('woocommerce_no_products_found', array($this, 'open_wrap_woo_products'), 2);
+			add_action('woocommerce_no_products_found', array($this, 'close_wrap_woo_products'), 100);
+			add_action('woocommerce_no_products_found', array($this, 'visible_search_params'), 3);
+			
+			add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'search_form_on_shop_page'), 2);
+			add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'open_wrap_woo_products'), 2);
+			add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'close_wrap_woo_products'), 100);
+			add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'visible_search_params'), 3);
+			add_action('woocommerce_shortcode_products_loop_no_results', array($this, 'no_products_found'));
+			
+			add_action('woocommerce_update_product', array($this, 'clear_count_cache'));
+			add_action('woocommerce_new_product', array($this, 'clear_count_cache'));
+			add_action('wp_trash_post', array($this, 'trash_post'));
+			add_action('untrashed_post', array($this, 'trash_post'));
+			
+			// follow search query in default shop page loop
+			add_action('woocommerce_product_query', array($this, 'woocommerce_product_query'));
+			
+			// check home page
+			add_filter('request', array($this, 'request'));
+			
+			add_action('wp_footer', array($this, 'elementor_support_wp_footer'));
+		}
+	}
+	
+	public function no_products_found() {
+		if (wcsearch_is_woo_active()) {
+			wc_no_products_found();
+		}
 	}
 	
 	public function set_query_input_args($args) {
@@ -186,7 +198,6 @@ class wcsearch_plugin {
 			$_args['page'] = (get_query_var('paged')) ? absint(get_query_var('paged')) : $_args['page'];
 			$_args['posts_per_page'] = apply_filters('loop_shop_per_page', wc_get_default_products_per_row() * wc_get_default_product_rows_per_page());
 			
-			//var_dump($args);
 			$_taxonomies = wcsearch_get_all_taxonomies();
 			foreach ($_taxonomies AS $tax_name=>$tax_slug) {
 				if (wcsearch_get_tax_terms_from_query_string($tax_slug)) {
@@ -200,10 +211,46 @@ class wcsearch_plugin {
 		return $_args;
 	}
 	
+	public function request($query_vars) {
+		
+		// home page takes taxonomy names as query vars, remove them and gives Page not found error
+		if (wcsearch_get_query_string() && (in_array($_SERVER["REQUEST_URI"], array('/', '')) || strpos($_SERVER["REQUEST_URI"], '/?') === 0)) {
+			unset($query_vars['product_cat']);
+			unset($query_vars['product_tag']);
+		}
+		
+		return $query_vars;
+	}
+	
 	public function woocommerce_product_query($q) {
 		
 		if (!wcsearch_get_query_string()) {
 			return $q;
+		}
+		
+		// do not action on AJAX search query
+		if (wp_doing_ajax()) {
+			return $q;
+		}
+		
+		// change taxes search by ID to search by slug
+		$taxes_to_check = array('product_cat', 'product_tag');
+		foreach ($taxes_to_check AS $tax_to_check) {
+			if (!empty($q->query_vars[$tax_to_check])) {
+				$new_query_var = array();
+				$terms = explode(',', $q->query_vars[$tax_to_check]);
+				foreach ($terms AS $term_id) {
+					if (is_numeric($term_id)) {
+						$term_obj = get_term($term_id, $tax_to_check);
+						if ($term_obj) {
+							$new_query_var[] = $term_obj->slug;
+						}
+					}
+				}
+				if ($new_query_var) {
+					$q->query_vars[$tax_to_check] = implode(',', $new_query_var);
+				}
+			}
 		}
 		
 		$args = apply_filters("wcsearch_query_input_args", array());
@@ -262,7 +309,7 @@ class wcsearch_plugin {
 				case 'rating' :
 					$orderby = "meta_value_num {$wpdb->posts}.ID";
 					$order = 'DESC';
-					$meta_key = '_wc_average_rating';
+					$meta_key = apply_filters('wcsearch_wc_rating_order_meta_key', '_wc_average_rating');
 					break;
 				case 'title' :
 					$orderby = 'title';
@@ -311,7 +358,9 @@ class wcsearch_plugin {
 		$this->search_forms = new wcsearch_search_forms_manager;
 		$this->ajax_controller = new wcsearch_ajax_controller;
 		$this->admin = new wcsearch_admin;
-		$this->updater = new wcsearch_updater(__FILE__, get_option('wcsearch_purchase_code'), get_option('wcsearch_access_token'));
+		if (wcsearch_is_standalone_plugin()) {
+			$this->updater = new wcsearch_updater(__FILE__, get_option('wcsearch_purchase_code'), get_option('wcsearch_access_token'));
+		}
 	}
 
 	public function wcsearch_no_texturize($shortcodes) {
@@ -436,8 +485,9 @@ class wcsearch_plugin {
 		} elseif ($wp_query->posts) {
 			$pattern = get_shortcode_regex();
 			foreach ($wp_query->posts AS $archive_post) {
-				if (isset($archive_post->post_content))
+				if (isset($archive_post->post_content)) {
 					$this->loadNestedFrontendController($pattern, $archive_post->post_content);
+				}
 			}
 		} elseif ($post && isset($post->post_content)) {
 			$pattern = get_shortcode_regex();
@@ -568,10 +618,6 @@ class wcsearch_plugin {
 			wp_register_style('wcsearch_font_awesome', WCSEARCH_RESOURCES_URL . 'css/font-awesome.css', array(), WCSEARCH_VERSION);
 
 			wp_register_script('wcsearch_js_functions', WCSEARCH_RESOURCES_URL . 'js/js_functions.js', array('jquery'), WCSEARCH_VERSION, true);
-			
-			if (wcsearch_geocode_functions()) {
-				wcsearch_geocode_enqueue_scripts_styles();
-			}
 
 			// this jQuery UI version 1.10.4
 			$ui_theme = 'smoothness';
@@ -587,7 +633,7 @@ class wcsearch_plugin {
 			wp_enqueue_script('jquery-ui-slider');
 			wp_enqueue_script('jquery-ui-datepicker');
 			wp_enqueue_script('jquery-touch-punch');
-			if (!get_option('wcsearch_notinclude_jqueryui_css')) {
+			if (!get_option('wcsearch_notinclude_jqueryui_css') && wcsearch_is_standalone_plugin()) {
 				wp_enqueue_style('wcsearch-jquery-ui-style');
 			}
 
@@ -638,8 +684,6 @@ class wcsearch_plugin {
 		) . ';
 ';
 
-		wcsearch_enqueue_global_vars();
-
 		echo '</script>
 ';
 	}
@@ -655,8 +699,8 @@ class wcsearch_plugin {
 	public function plugin_row_meta($links, $file) {
 		if (dirname(plugin_basename(__FILE__) == $file)) {
 			$row_meta = array(
-					'docs' => '<a href="https://www.salephpscripts.com/woocommerce-search/demo/documentation/">' . esc_html__("Documentation", "WCSEARCH") . '</a>',
-					'codecanoyn' => '<a href="https://codecanyon.net/item/woocommerce-search-filter-plugin-for-wordpress/30151200#item-description__changelog">' . esc_html__("Changelog", "WCSEARCH") . '</a>',
+					'docs' => '<a href="https://www.salephpscripts.com/wordpress-search/demo/documentation/">' . esc_html__("Documentation", "WCSEARCH") . '</a>',
+					'codecanoyn' => '<a href="https://www.salephpscripts.com/wc-search/#changelog">' . esc_html__("Changelog", "WCSEARCH") . '</a>',
 			);
 	
 			return array_merge($links, $row_meta);

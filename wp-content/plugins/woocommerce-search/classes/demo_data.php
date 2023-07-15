@@ -11,7 +11,7 @@ class wcsearch_demo_data_manager {
 	public function export() {
 		global $wpdb, $wcsearch_instance, $wcsearch_default_model_settings;
 		
-		if (wcsearch_getValue($_POST, 'export') && wp_verify_nonce($_POST['wcsearch_csv_import_nonce'], WCSEARCH_PATH) && (!defined('WCSEARCH_DEMO') || !WCSEARCH_DEMO)) {
+		if (wcsearch_getValue($_POST, 'export') && (!defined('WCSEARCH_DEMO') || !WCSEARCH_DEMO)) {
 				
 			if (!isset($GLOBALS['wp_filesystem']) || !is_object($GLOBALS['wp_filesystem'])) {
 				WP_Filesystem();

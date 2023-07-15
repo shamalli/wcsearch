@@ -1,11 +1,11 @@
 <div class="wcsearch-search-input wcsearch-search-input-radios <?php echo $search_model->openedClosedClass(); ?>" <?php echo $search_model->getOptionsString(); ?>>
 	<label class="wcsearch-search-input-label"><?php echo esc_html($title); ?></label>
-	<div class="wcsearch-search-model-input-radios-wrapper">
+	<div class="wcsearch-search-input-terms-columns wcsearch-search-model-input-radios-wrapper">
 	<?php
 	if ($min_max_options): 
 		$i = 1;
 		while ($i <= ($columns+1)): ?>
-		<div class="wcsearch-search-input-radios-column wcsearch-search-input-radios-column-<?php echo esc_attr($columns); ?>">
+		<div class="wcsearch-search-input-terms-column wcsearch-search-input-terms-column-<?php echo esc_attr($columns); ?>">
 			<?php $j = 1; ?>
 			<?php foreach (wcsearch_get_number_labels($min_max_options, $used_by, $slug) AS $option_label=>$option_value): ?>
 			<?php if ($i == $j): ?>

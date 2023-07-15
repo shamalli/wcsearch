@@ -195,6 +195,7 @@ function wcsearch_getModelOptions($type, $params) {
  *
  */
 class wcsearch_search_form_model_field {
+	public $id;
 	public $params = array();
 	public $frontend = false;
 	public $used_by = 'wc';
@@ -227,6 +228,8 @@ class wcsearch_search_form_model_field {
 		
 		$this->params = wcsearch_getModelOptions($type, $this->params);
 		
+		$this->id = 'wcsearch_id_' . md5(serialize($this->params));
+		
 		$this->params['used_by'] = $this->used_by;
 		
 		if (!wcsearch_get_query_string()) {
@@ -254,6 +257,16 @@ class wcsearch_search_form_model_field {
 				) {
 					$taxonomy = wcsearch_getValue(wcsearch_wrapper_get_taxonomies(array("name" => $tax_name), 'objects'), $tax_name);
 					
+					// set default placeholder
+					if (!empty($this->params['new_field'])) {
+						if (isset($this->params['placeholder'])) {
+							$this->params['placeholder'] = sprintf(esc_html__('Select %s', 'WCSEARCH'), $taxonomy->labels->singular_name);
+						}
+						if (isset($this->params['placeholders'])) {
+							$this->params['placeholders'] = sprintf(esc_html__('Select %s', 'WCSEARCH'), $taxonomy->labels->singular_name);
+						}
+					}
+					
 					$mode = wcsearch_getValue($this->params, 'mode', 'dropdown');
 					$counter = wcsearch_getValue($this->params, 'counter', 1);
 					$depth = wcsearch_getValue($this->params, 'depth', 1);
@@ -263,7 +276,13 @@ class wcsearch_search_form_model_field {
 					$exact_terms = wcsearch_getValue($this->params, 'exact_terms', '');
 					
 					if (!empty($this->params['dependency_items']) && !empty($this->params['dependency_tax'])) {
-						$dependency_items = explode(",", $this->params['dependency_items']);
+						
+						if (is_array($this->params['dependency_items'])) {
+							$dependency_items = $this->params['dependency_items'];
+						} else {
+							$dependency_items = explode(",", $this->params['dependency_items']);
+						}
+						
 						foreach ($dependency_items AS $key=>$d_item) {
 							if (!is_numeric($d_item)) {
 								if ($term = wcsearch_wrapper_get_term_by_slug($d_item, $this->params['dependency_tax'])) {
@@ -296,6 +315,8 @@ class wcsearch_search_form_model_field {
 					}
 					if ($depth == 1) {
 						$categories_options['parent'] = 0;
+					} else {
+						$categories_options['depth'] = $depth;
 					}
 					
 					if (in_array($mode, array('hierarhical_dropdown', 'dropdown', 'dropdown_keywords', 'multi_dropdown', 'dropdown_address'))) {
@@ -328,6 +349,23 @@ class wcsearch_search_form_model_field {
 						$selection_items = wcsearch_wrapper_get_categories($categories_options);
 						
 						return wcsearch_renderTemplate($template_path . "tax_radios_checkboxes.tpl.php",
+								array_merge(array(
+										"search_model" => $this,
+										"tax_name" => $tax_name,
+										"taxonomy" => $taxonomy,
+										"mode" => $mode,
+										"selection_items" => $selection_items,
+										"columns" => $columns,
+										"counter" => $counter,
+										"depth" => $depth,
+						), $this->params), true);
+					} elseif ($mode == 'radios_buttons' || $mode == 'checkboxes_buttons') {
+						
+						$columns = wcsearch_getValue($this->params, 'columns', 2);
+						
+						$selection_items = wcsearch_wrapper_get_categories($categories_options);
+						
+						return wcsearch_renderTemplate($template_path . "tax_buttons.tpl.php",
 								array_merge(array(
 										"search_model" => $this,
 										"tax_name" => $tax_name,
@@ -513,6 +551,20 @@ class wcsearch_search_form_model_field {
 				), $this->params), true);
 				
 				break;
+			case "hours":
+				
+				$counter = 0;
+				if ($this->params['counter']) {
+					$counter = wcsearch_get_count_num(array('hours' => $this->params['slug']));
+				}
+				
+				return wcsearch_renderTemplate($template_path . "hours.tpl.php",
+						array_merge(array(
+								"search_model" => $this,
+								"counter_value" => $counter
+				), $this->params), true);
+				
+				break;
 			case "ratings":
 				
 				$options = array(
@@ -534,8 +586,6 @@ class wcsearch_search_form_model_field {
 	}
 	
 	public function getOptionsString() {
-		$data = "";
-		
 		// take options only from default model
 		$type = wcsearch_getValue($this->params, 'type');
 		
@@ -547,10 +597,13 @@ class wcsearch_search_form_model_field {
 		
 		$options['used_by'] = $this->used_by;
 		
+		$data = "id='" . $this->id . "'";
+		
 		foreach ($options AS $name=>$value) {
 			
 			if (is_array($value)) {
 				$value = implode(',', $value);
+				//$value = json_encode($value);
 			}
 			
 			$data .= ' data-'.$name.'="' . esc_attr($value) . '" ';

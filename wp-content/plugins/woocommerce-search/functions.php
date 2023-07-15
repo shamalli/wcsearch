@@ -23,13 +23,13 @@ function wcsearch_tax_dropdowns_menu_init($params) {
 			'autocomplete_field' => '',
 			'autocomplete_field_value' => '',
 			'autocomplete_ajax' => false,
-			'placeholder' => '',
+			'placeholder' => false,
 			'depth' => 1,
 			'depth_level' => 1,
 			'term_id' => 0,
 			'parent' => '',
 			'return_terms' => false,
-			'functionality' => '',
+			'functionality' => '', // wcsearch-tax-autocomplete, wcsearch-multiselect-dropdown, wcsearch-tax-keywords, wcsearch-tax-address
 			'orderby' => 'name',
 			'order' => 'ASC',
 			'place_id' => '',
@@ -46,7 +46,7 @@ function wcsearch_tax_dropdowns_menu_init($params) {
 			$field_name = 'selected_tax[' . $uID . ']';
 		}
 		
-		if (empty($placeholder)) {
+		if ($placeholder === false) {
 			$taxonomy_obj = wcsearch_wrapper_get_taxonomy($tax);
 			$placeholder = $taxonomy_obj->labels->name;
 		}
@@ -81,103 +81,86 @@ function wcsearch_tax_dropdowns_menu_init($params) {
 			$categories_options['parent'] = 0;
 		}
 		
-		// we use array_merge with empty array because we need to flush keys in terms array
-		/* if ($count) {
-			$terms = array_merge(
-					// there is a wp bug with pad_counts in get_terms function - so we use this construction
-					wp_list_filter(
-							wcsearch_wrapper_get_categories($categories_options),
-							array('parent' => $parent)
-					), array());
-		} else {
-			$terms = array_merge(
-					wcsearch_wrapper_get_categories($categories_options), array());
-		} */
 		$terms = wcsearch_wrapper_get_categories($categories_options);
 		
-		if ($terms) {
+		if ($return_terms) {
+			return $terms;
+		}
+		
+		// do not place value when it doesn't belong to this dropdown,
+		// avoid mismatch with heirarhical dropdowns
+		if ($depth == 1) {
 			foreach ($terms AS $id=>$term) {
-				/* if ($exact_terms && (!in_array($term->term_id, $exact_terms) && !in_array($term->slug, $exact_terms))) {
-					unset($terms[$id]);
-				} */
-				
 				if ($term->term_id == $field_value) {
 					$field_value_exists = true;
 				}
 			}
-			
-			if ($return_terms) {
-				return $terms;
-			}
-			
-			// do not place value when it doesn't belong to this dropdown,
-			// avoid mismatch with heirarhical dropdowns
 			if (empty($field_value_exists)) {
 				$field_value = '';
 			}
-			
-			if ($depth_level == 1) {
-				echo '<div id="wcsearch-tax-dropdowns-wrap-' . esc_attr($uID) . '" class="wcsearch-tax-dropdowns-wrap">';
-				echo '<input type="hidden" name="' . esc_attr($field_name) . '" id="selected_tax[' . esc_attr($uID) . ']" value="' . esc_attr($field_value) . '" />';
-				if ($exact_terms) {
-					echo '<input type="hidden" id="exact_terms[' . esc_attr($uID) . ']" value="' . addslashes(implode(',', $exact_terms)) . '" />';
-				}
-			}
-			
-			if ($autocomplete_field) {
-				$autocomplete_data = 'data-autocomplete-name="' . esc_attr($autocomplete_field) . '" data-autocomplete-value="' . esc_attr(stripslashes($autocomplete_field_value)) . '" data-default-icon="' . wcsearch_getDefaultTermIconUrl($tax) . '"';
-				if ($autocomplete_ajax) {
-					$autocomplete_data .= ' data-ajax-search=1';
-				}
-				if ($place_id) {
-					$autocomplete_data .= ' data-place-id="' . $place_id . '"';
-				}
-			} else {
-				$autocomplete_data = '';
-			}
-			
-			if ($open_on_click) {
-				$open_on_click_data = 'data-open-on-click="' . esc_attr($open_on_click) . '"';
-			} else {
-				$open_on_click_data = '';
-			}
-			echo '<select class="wcsearch-form-control wcsearch-autocomplete ' . esc_attr($functionality) . ' wcsearch-dropdowns-tax-' . esc_attr($tax) . '" data-id="' . esc_attr($uID) . '" data-placeholder="' . esc_attr($placeholder) . '" data-depth-level="' . esc_attr($depth_level) . '" data-tax="' . esc_attr($tax) . '" ' . $autocomplete_data . ' ' . $open_on_click_data . '>';
-			foreach ($terms AS $term) {
-				if ($count) {
-					global $counter_calls_count;
-					$counter_calls_count = array();
-					
-					$term_count = ' data-count="' . wcsearch_get_count_num(array('term' => $term)) . '"';
-				} else {
-					$term_count = '';
-				}
-				
-				if (($term->term_id == $term_id) || (is_array($term_id) && in_array($term->term_id, $term_id))) {
-					$selected = 'data-selected="selected"';
-				} else {
-					$selected = '';
-				}
-				if ($icon_file = wcsearch_getTermIconUrl($term->term_id, $tax)) {
-					$icon = 'data-icon="' . esc_attr($icon_file) . '"';
-				} else {
-					$icon = 'data-icon="' . wcsearch_getDefaultTermIconUrl($tax) . '"';
-				}
-				
-				$data = 'data-name="' . esc_attr($term->name)  . '" data-sublabel="" ' . $selected . ' ' . ($selected ? 'selected' : '') . ' ' . $icon . ' ' . $term_count;
-				
-				$data .= ' data-termid="'.esc_attr($term->term_id) . '" data-tax="'.esc_attr($term->taxonomy) . '"';
+		}
 		
-				echo '<option id="' . esc_attr($term->slug) . '" value="' . esc_attr($term->term_id) . '" ' . $data . '>' . esc_html($term->name) . '</option>';
+		if ($depth_level == 1) {
+			echo '<div id="wcsearch-tax-dropdowns-wrap-' . esc_attr($uID) . '" class="wcsearch-tax-dropdowns-wrap">';
+			echo '<input type="hidden" name="' . esc_attr($field_name) . '" id="selected_tax[' . esc_attr($uID) . ']" value="' . esc_attr($field_value) . '" />';
+			if ($exact_terms) {
+				echo '<input type="hidden" id="exact_terms[' . esc_attr($uID) . ']" value="' . addslashes(implode(',', $exact_terms)) . '" />';
+			}
+		}
+		
+		if ($autocomplete_field) {
+			$autocomplete_data = 'data-autocomplete-name="' . esc_attr($autocomplete_field) . '" data-autocomplete-value="' . esc_attr(stripslashes($autocomplete_field_value)) . '" data-default-icon="' . wcsearch_getDefaultTermIconUrl($tax) . '"';
+			if ($autocomplete_ajax) {
+				$autocomplete_data .= ' data-ajax-search=1';
+			}
+			if ($place_id) {
+				$autocomplete_data .= ' data-place-id="' . $place_id . '"';
+			}
+		} else {
+			$autocomplete_data = '';
+		}
+		
+		if ($open_on_click) {
+			$open_on_click_data = 'data-open-on-click="' . esc_attr($open_on_click) . '"';
+		} else {
+			$open_on_click_data = '';
+		}
+		echo '<select class="wcsearch-form-control wcsearch-autocomplete ' . esc_attr($functionality) . ' wcsearch-dropdowns-tax-' . esc_attr($tax) . '" data-id="' . esc_attr($uID) . '" data-placeholder="' . esc_attr($placeholder) . '" data-depth-level="' . esc_attr($depth_level) . '" data-tax="' . esc_attr($tax) . '" ' . $autocomplete_data . ' ' . $open_on_click_data . '>';
+		foreach ($terms AS $term) {
+			if ($count) {
+				global $counter_calls_count;
+				$counter_calls_count = array();
 				
-				// when exact_terms - show them all on the first level at once
-				if ($depth > 1 && !$exact_terms) {
-					echo _wcsearch_tax_dropdowns_menu($tax, $term->term_id, $depth, 1, $term_id, $count, $exact_terms, $hide_empty, $orderby, $order);
-				}
+				$term_count = ' data-count="' . wcsearch_get_count_num(array('term' => $term)) . '"';
+			} else {
+				$term_count = '';
 			}
-			echo '</select>';
-			if ($depth_level == 1) {
-				echo '</div>';
+			
+			if (($term->term_id == $term_id) || (is_array($term_id) && in_array($term->term_id, $term_id))) {
+				$selected = 'data-selected="selected"';
+			} else {
+				$selected = '';
 			}
+			if ($icon_file = wcsearch_getTermIconUrl($term->term_id, $tax)) {
+				$icon = 'data-icon="' . esc_attr($icon_file) . '"';
+			} else {
+				$icon = 'data-icon="' . wcsearch_getDefaultTermIconUrl($tax) . '"';
+			}
+			
+			$data = 'data-name="' . esc_attr($term->name)  . '" data-sublabel="" ' . $selected . ' ' . ($selected ? 'selected' : '') . ' ' . $icon . ' ' . $term_count;
+			
+			$data .= ' data-termid="'.esc_attr($term->term_id) . '" data-tax="'.esc_attr($term->taxonomy) . '"';
+
+			echo '<option id="' . esc_attr($term->slug) . '" value="' . esc_attr($term->term_id) . '" ' . $data . '>' . esc_html($term->name) . '</option>';
+			
+			// when exact_terms - show them all on the first level at once
+			if ($depth > 1 && !$exact_terms) {
+				echo _wcsearch_tax_dropdowns_menu($tax, $term->term_id, $depth, 1, $term_id, $count, $exact_terms, $hide_empty, $orderby, $order);
+			}
+		}
+		echo '</select>';
+		if ($depth_level == 1) {
+			echo '</div>';
 		}
 	} else {
 		if ($autocomplete_field) {
@@ -268,7 +251,7 @@ function _wcsearch_tax_dropdowns_menu($tax, $parent = 0, $depth = 2, $current_le
 	return $html;
 }
 
-function wcsearch_get_term_sublabel($id, $tax, $separator = ',', $return_array = false, &$chain = array()) {
+function wcsearch_get_term_sublabel($id, $tax, $separator = ', ', $return_array = false, &$chain = array()) {
 	$parent = get_term($id, $tax);
 	if (is_wp_error($parent) || !$parent) {
 		if ($return_array) {
@@ -308,7 +291,7 @@ function wcsearch_heirarhical_dropdowns_menu_init($params) {
 			'autocomplete_field' => '',
 			'autocomplete_field_value' => '',
 			'autocomplete_ajax' => false,
-			'placeholder' => '',
+			'placeholders' => '',
 			'depth' => 1,
 			'depth_level' => 1,
 			'term_id' => 0,
@@ -328,9 +311,15 @@ function wcsearch_heirarhical_dropdowns_menu_init($params) {
 		$field_name = 'selected_tax[' . $uID . ']';
 	}
 	
-	if (empty($placeholder)) {
+	if ($placeholders === false) {
 		$taxonomy_obj = get_taxonomy($tax);
-		$placeholder = $taxonomy_obj->labels->name;
+		$placeholders = $taxonomy_obj->labels->singular_name;
+	} elseif (!is_array($placeholders) && json_decode($placeholders)) {
+		$placeholders = json_decode($placeholders);
+	} elseif (!empty($placeholders)) {
+		$placeholders = $placeholders;
+	} elseif (!empty($placeholder)) {
+		$placeholders = $placeholder;
 	}
 
 	if ($term_id && $depth_level == 1) {
@@ -387,6 +376,21 @@ function wcsearch_heirarhical_dropdowns_menu_init($params) {
 		$terms = wcsearch_wrapper_get_categories($categories_options);
 		
 		if ($terms) {
+			
+			if (is_array($placeholders)) {
+				if (isset($placeholders[$key])) {
+					$chain_placeholder = $placeholders[$key];
+				} else {
+					$i = $key;
+					while (!isset($placeholders[$i])) {
+						$i--;
+					}
+					$chain_placeholder = $placeholders[$i];
+				}
+			} else {
+				$chain_placeholder = $placeholders;
+			}
+			
 			foreach ($terms AS $id=>$term) {
 				if ($exact_terms && (!in_array($term->term_id, $exact_terms) && !in_array($term->slug, $exact_terms))) {
 					unset($terms[$id]);
@@ -401,7 +405,7 @@ function wcsearch_heirarhical_dropdowns_menu_init($params) {
 			} else {
 				$autocomplete_data = '';
 			}
-			echo '<select class="wcsearch-form-control wcsearch-autocomplete ' . esc_attr($functionality) . ' wcsearch-dropdowns-tax-' . esc_attr($tax) . '" data-id="' . esc_attr($uID) . '" data-placeholder="' . esc_attr($placeholder) . '" data-depth-level="' . esc_attr($chain_depth_level) . '" data-tax="' . esc_attr($tax) . '" ' . $autocomplete_data . '>';
+			echo '<select class="wcsearch-form-control wcsearch-autocomplete ' . esc_attr($functionality) . ' wcsearch-dropdowns-tax-' . esc_attr($tax) . '" data-id="' . esc_attr($uID) . '" data-placeholders="' . esc_attr($chain_placeholder) . '" data-depth-level="' . esc_attr($chain_depth_level) . '" data-tax="' . esc_attr($tax) . '" ' . $autocomplete_data . '>';
 			foreach ($terms AS $term) {
 				if ($count) {
 					$term_count = 'data-count="' . wcsearch_get_count_num(array('term' => $term)) . '"';
@@ -433,107 +437,6 @@ function wcsearch_heirarhical_dropdowns_menu_init($params) {
 	if ($depth_level == 1) {
 		echo '</div>';
 	}
-}
-
-
-function wcsearch_tax_dropdowns_init($args) {
-	$tax = wcsearch_getValue($args, 'tax', 'product_cat');
-	$field_name = wcsearch_getValue($args, 'field_name');
-	$term_id = wcsearch_getValue($args, 'term_id');
-	$count = wcsearch_getValue($args, 'count', true);
-	$titles = wcsearch_getValue($args, 'titles', array());
-	$uID = wcsearch_getValue($args, 'uID');
-	$exact_terms = wcsearch_getValue($args, 'exact_terms', array());
-	$hide_empty = wcsearch_getValue($args, 'hide_empty', false);
-	
-	// unique ID need when we place some dropdowns groups on one page
-	if (!$uID) {
-		$uID = rand(1, 10000);
-	}
-	
-	$localized_data[$uID] = array(
-			'titles'      => $titles,
-	);
-
-	echo "<script>wcsearch_js_objects['tax_dropdowns_" . $uID . "'] = " . json_encode($localized_data) . "</script>";
-
-	if (!is_null($term_id) && $term_id != 0) {
-		$chain = array();
-		$parent_id = $term_id;
-		while ($parent_id != 0) {
-			if ($term = wcsearch_wrapper_get_term($parent_id, $tax)) {
-				$chain[] = $term->term_id;
-				$parent_id = $term->parent;
-			} else {
-				break;
-			}
-		}
-	}
-	$chain[] = 0;
-	$chain = array_reverse($chain);
-
-	if (!$field_name) {
-		$field_name = 'selected_tax[' . $uID . ']';
-	}
-
-	echo '<div id="wcsearch-tax-dropdowns-wrap-' . esc_attr($uID) . '" class="wcsearch-tax-dropdowns-wrap" data-tax="' . esc_attr($tax) . '" data-count="' . esc_attr($count) . '" data-hide-empty="' . esc_attr($hide_empty) . '">';
-	echo '<input type="hidden" name="' . esc_attr($field_name) . '" id="selected_tax[' . esc_attr($uID) . ']" class="selected_tax_' . esc_attr($tax) . '" value="' . esc_attr($term_id) . '" />';
-	echo '<input type="hidden" id="exact_terms[' . esc_attr($uID) . ']" value="' . addslashes(implode(',', $exact_terms)) . '" />';
-	foreach ($chain AS $key=>$term_id) {
-		if ($count) {
-			// there is a wp bug with pad_counts in get_terms function - so we use this construction
-			$terms = wp_list_filter(get_categories(array('taxonomy' => $tax, 'hide_empty' => $hide_empty)), array('parent' => $term_id));
-		} else {
-			$terms = get_categories(array('taxonomy' => $tax, 'hide_empty' => $hide_empty, 'parent' => $term_id));
-		}
-
-		if (!empty($terms)) {
-			foreach ($terms AS $id=>$term) {
-				if ($exact_terms && (!in_array($term->term_id, $exact_terms) && !in_array($term->slug, $exact_terms))) {
-					unset($terms[$id]);
-				}
-			}
-
-			// when selected exact sub-categories of non-root category
-			if (empty($terms) && !empty($exact_terms)) {
-				if ($count) {
-					// there is a wp bug with pad_counts in get_terms function - so we use this construction
-					$terms = wp_list_filter(get_categories(array('taxonomy' => $tax, 'include' => $exact_terms, 'hide_empty' => $hide_empty)));
-				} else {
-					$terms = get_categories(array('taxonomy' => $tax, 'include' => $exact_terms, 'hide_empty' => $hide_empty));
-				}
-			}
-
-			if (!empty($terms)) {
-				$level_num = $key + 1;
-				echo '<div id="wcsearch-wrap-chainlist-' . esc_attr($level_num) . '-' .esc_attr($uID) . '" class="wcsearch-row wcsearch-form-group">';
-					echo '<div class="wcsearch-col-md-12">';
-						echo '<select data-uid="' . esc_attr($uID) . '" data-level="' . esc_attr($level_num) . '" class="wcsearch-form-control wcsearch-selectmenu">';
-						echo '<option value="">- ' . ((isset($titles[$key])) ? $titles[$key] : esc_html__('Select term', 'WCSEARCH')) . ' -</option>';
-						foreach ($terms AS $term) {
-							if ($count) {
-								$term_count = " (" . esc_attr($term->count) . ")";
-							} else {
-								 $term_count = '';
-							}
-							if (isset($chain[$key+1]) && $term->term_id == $chain[$key+1]) {
-								$selected = 'selected';
-							} else {
-								$selected = '';
-							}
-									
-							$icon = '';
-	
-							echo '<option id="' . esc_attr($term->slug) . '" value="' . esc_attr($term->term_id) . '" ' . $selected . ' ' . $icon . '>' . esc_html($term->name) . $term_count . '</option>';
-						}
-						echo '</select>';
-						
-					echo '</div>';
-				echo '</div>';
-			}
-		}
-	}
-	echo '</div>';
 }
 
 function wcsearch_tax_dropdowns_updateterms() {
@@ -602,7 +505,15 @@ function wcsearch_getDefaultTermIconUrl($tax = false) {
 	return WCSEARCH_RESOURCES_URL . 'images/search.png';
 }
 
-function wcsearch_getEditFormIcon($link) {
+function wcsearch_getEditFormIcon($id) {
+	if (!($link = get_edit_post_link($id))) {
+		
+		$link = apply_filters("wcsearch_get_edit_form_link", $link, $id);
+		
+		if (!$link) {
+			$link = wp_login_url(admin_url('post.php?post=' . $id . '&action=edit'));
+		}
+	}
 	?>
 	<a class="wcsearch-click-to-edit-search-button" href="<?php echo esc_url($link); ?>" title="<?php esc_attr_e('Click to edit search form', 'WCSEARCH'); ?>">
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -799,12 +710,24 @@ function wcsearch_do_enqueue_scripts_styles($load_scripts_styles) {
 	if ((($wcsearch_instance->frontend_controllers || $load_scripts_styles) && !$wcsearch_enqueued)) {
 		return true;
 	}
+	
+	if ($wcsearch_instance->form_on_shop_page && is_shop()) {
+		return true;
+	}
+}
+
+function wcsearch_setFrontendController($shortcode, $shortcode_instance = null) {
+	global $wcsearch_instance;
+
+	$wcsearch_instance->frontend_controllers[$shortcode][] = $shortcode_instance;
+
+	return $shortcode_instance;
 }
 
 function wcsearch_get_on_shop_page() {
 	$args = array(
 		'post_type' => WCSEARCH_FORM_TYPE,
-		'status' => 'publish',
+		'post_status' => 'publish',
 		'meta_query' => array(
 				array(
 						'key' => '_on_shop_page',
@@ -840,13 +763,25 @@ if (
 	}
 }
 
+/**
+ * returns array of installed plugins:
+ * - WooCommerce,
+ * - Web 2.0 Directory,
+ * - Google Maps Locator,
+ * - MapBox Locator
+ * 
+ * true when no other plugins,
+ * 
+ * false - when it is not standalone
+ * 
+ */
 function wcsearch_is_standalone_plugin() {
 	if (in_array('woocommerce-search/search.php', apply_filters('active_plugins', get_option('active_plugins')))) {
 		$other_plugins = array();
 		if (wcsearch_is_woo_active()) {
 			$other_plugins['wc'] = esc_html__("WooCommerce search", "WCSEARCH");
 		}
-		if (defined('W2DC_VERSION')) {
+		if (defined('W2DC_VERSION') || defined('W2DCF_VERSION')) {
 			$other_plugins['w2dc'] = esc_html__("Web 2.0 Directory search", "WCSEARCH");
 		}
 		if (defined('W2GM_VERSION')) {
@@ -855,7 +790,12 @@ function wcsearch_is_standalone_plugin() {
 		if (defined('W2MB_VERSION')) {
 			$other_plugins['w2dc'] = esc_html__("MapBox Locator search", "WCSEARCH");
 		}
-		return $other_plugins;
+		
+		if ($other_plugins) {
+			return $other_plugins;
+		} else {
+			return true;
+		}
 	} else {
 		return false;
 	}
@@ -869,7 +809,7 @@ function wcsearch_get_default_used_by() {
 	if (in_array('woocommerce-search/search.php', apply_filters('active_plugins', get_option('active_plugins')))) {
 		return 'wc';
 	} else {
-		if (defined('W2DC_VERSION')) {
+		if (defined('W2DC_VERSION') || defined('W2DCF_VERSION')) {
 			return 'w2dc';
 		}
 		if (defined('W2GM_VERSION')) {
@@ -882,13 +822,13 @@ function wcsearch_get_default_used_by() {
 }
 
 function wcsearch_is_w2dc_active() {
-	if (defined('W2DC_VERSION') || defined('W2GM_VERSION') || defined('W2MB_VERSION')) {
+	if (defined('W2DC_VERSION') || defined('W2DCF_VERSION') || defined('W2GM_VERSION') || defined('W2MB_VERSION')) {
 		return true;
 	}
 }
 
 function wcsearch_is_woo_active() {
-	if (in_array('woocommerce/woocommerce.php', apply_filters('active_plugins', get_option('active_plugins')))) {
+	if (class_exists('woocommerce')) {
 		return true;
 	}
 }
@@ -946,8 +886,6 @@ function wcsearch_number_format($value, $used_by, $slug) {
 
 function wcsearch_print_range_slider_code($params) {
 	extract($params);
-	
-	//$odd_even_labels = true;
 	
 	$index = wcsearch_generateRandomVal();
 	
@@ -1043,8 +981,10 @@ function wcsearch_print_range_slider_code($params) {
 				$min_value = $values[0];
 			}
 		} else {
-			$max_value = end($min_max_options);
-			$min_value = reset($min_max_options);
+			$values = explode(',', $values[0]);
+
+			$max_value = end($values);
+			$min_value = reset($values);
 		}
 	} else {
 		$max_value = end($min_max_options);
@@ -1187,8 +1127,6 @@ function wcsearch_print_range_slider_code($params) {
 function wcsearch_print_single_slider_code($params) {
 	extract($params);
 	
-	$odd_even_labels = true;
-	
 	// 1, 10, 100
 	// 1-100
 	
@@ -1316,7 +1254,7 @@ function wcsearch_print_single_slider_code($params) {
 					<?php else: ?>
 					var position = 'right';
 					<?php endif ?>
-					<?php if (!$odd_even_labels): ?>
+					<?php if ($odd_even_labels == "odd"): ?>
 					var odd_even_label = 2;
 					<?php else: ?>
 					var odd_even_label = 1;
@@ -1382,7 +1320,7 @@ function wcsearch_print_radius_slider_code($params) {
 	$min_max_options_formatted = $min_max_options;
 	foreach ($min_max_options_formatted AS $key=>$_value) {
 		if (is_numeric($_value)) {
-			$min_max_options_formatted[$key] = '<strong>' . $_value . '</strong>' . ' ' . esc_html( ($dimension_unit == 'miles' ? _nx("mile", "miles", $_value, "WCSEARCH") : _nx("kilometer", "kilometers", $_value, "WCSEARCH")) );
+			$min_max_options_formatted[$key] = '<strong>' . $_value . '</strong>' . ' ' . esc_html( ($dimension_unit == 'miles' ? _n("mile", "miles", $_value, "WCSEARCH") : _n("kilometer", "kilometers", $_value, "WCSEARCH")) );
 		} else {
 			$min_max_options_formatted[$key] = esc_attr($_value);
 		}
@@ -1420,12 +1358,12 @@ function wcsearch_print_radius_slider_code($params) {
 
 					var value = $(this).slider("option", "value");
 					var value_str = slider_params_formatted_<?php echo esc_attr($index); ?>[ui.value];
-					$("#single_slider_<?php echo esc_attr($index); ?>_string").html("<?php echo esc_attr($string_label); ?> "+value_str);
+					$("#single_slider_<?php echo esc_attr($index); ?>_string").html("<?php echo esc_attr($string_label); ?> "+" "+value_str);
 				}
 			}).each(function() {
 				var value = $(this).slider("value");
 				var value_str = slider_params_formatted_<?php echo esc_attr($index); ?>[value];
-				$("#single_slider_<?php echo esc_attr($index); ?>_string").html("<?php echo esc_attr($string_label); ?> "+value_str);
+				$("#single_slider_<?php echo esc_attr($index); ?>_string").html("<?php echo esc_attr($string_label); ?> "+" "+value_str);
 				<?php if ($show_scale == "scale"): ?>
 				$.each(slider_params_<?php echo esc_attr($index); ?>, function(index, value) {
 					<?php if (!is_rtl()): ?>
@@ -1433,7 +1371,7 @@ function wcsearch_print_radius_slider_code($params) {
 					<?php else: ?>
 					var position = 'right';
 					<?php endif ?>
-					<?php if (!$odd_even_labels): ?>
+					<?php if ($odd_even_labels == "odd"): ?>
 					var odd_even_label = 2;
 					<?php else: ?>
 					var odd_even_label = 1;
@@ -1458,7 +1396,9 @@ function wcsearch_print_radius_slider_code($params) {
 				}
 				
 			}
-			format_input_<?php echo esc_attr($index); ?>(<?php echo esc_js($value); ?>);
+
+			var val = slider_params_<?php echo esc_attr($index); ?>[<?php echo esc_js($value); ?>];
+			format_input_<?php echo esc_attr($index); ?>(val);
 		});
 })(jQuery);
 	</script>
@@ -1582,21 +1522,24 @@ function wcsearch_get_number_labels($min_max_options, $used_by, $slug) {
 	$min_max_labels = wcsearch_format_number_labels($min_max_options, $used_by, $slug);
 	
 	$label_value_pair = array();
-	$key = 0;
-	while ($key <= count($min_max_labels)) {
-		if ($key == 0) {
-			$option_label = sprintf(esc_html__('less than %s'), $min_max_labels[$key]);
-			$option_value = '-' . $min_max_options[$key];
-		} elseif ($key == count($min_max_options)) {
-			$option_label = sprintf(esc_html__('more than %s'), $min_max_labels[$key-1]);
-			$option_value = $min_max_options[$key-1] . '-';
-		} else {
-			$option_label = $min_max_labels[$key-1] . ' - ' . $min_max_labels[$key];
-			$option_value = $min_max_options[$key-1] . '-' . $min_max_options[$key];
+	
+	if ($min_max_labels) {
+		$key = 0;
+		while ($key <= count($min_max_labels)) {
+			if ($key == 0) {
+				$option_label = sprintf(esc_html__('less than %s'), $min_max_labels[$key]);
+				$option_value = '-' . $min_max_options[$key];
+			} elseif ($key == count($min_max_options)) {
+				$option_label = sprintf(esc_html__('more than %s'), $min_max_labels[$key-1]);
+				$option_value = $min_max_options[$key-1] . '-';
+			} else {
+				$option_label = $min_max_labels[$key-1] . ' - ' . $min_max_labels[$key];
+				$option_value = $min_max_options[$key-1] . '-' . $min_max_options[$key];
+			}
+			$label_value_pair[$option_label] = $option_value;
+			
+			$key++;
 		}
-		$label_value_pair[$option_label] = $option_value;
-		
-		$key++;
 	}
 	
 	return $label_value_pair;
@@ -1628,6 +1571,11 @@ function wcsearch_get_onsale_counter() {
 	}
 }
 
+function wcsearch_get_hours_counter($slug) {
+
+	return 0;
+}
+
 function wcsearch_get_instock_counter() {
 
 	$args = array(
@@ -1652,22 +1600,21 @@ function wcsearch_get_instock_counter() {
 }
 
 function wcsearch_get_search_forms_posts() {
-	$args = array(
+
+	$posts = get_posts(array(
 			'post_type' => WCSEARCH_FORM_TYPE,
 			'status' => 'publish',
 			'posts_per_page' => -1
-	);
-	$query = new WP_Query($args);
-	
+	));
+
 	$search_forms = array();
-	while ($query->have_posts()) {
-		$query->the_post();
-		
-		$title = get_the_title();
+	foreach ($posts AS $post) {
+		$title = $post->post_title;
 		if (!$title) {
 			$title = esc_html__("(no title)", "WCSEARCH");
 		}
-		$search_forms[get_the_ID()] = $title;
+		
+		$search_forms[$post->ID] = $title;
 	}
 	
 	return $search_forms;
@@ -1730,17 +1677,24 @@ function wcsearch_get_params_from_string($str) {
 	return $result;
 }
 
-function wcsearch_get_tax_terms_from_query_string($tax) {
+function wcsearch_get_tax_terms_from_query_string($tax, $query_string = array()) {
 
-	$request = wcsearch_get_query_string();
+	if (!$query_string) {
+		$query_string = wcsearch_get_query_string();
+	}
 
-	return wcsearch_get_tax_terms_from_args($tax, $request);
+	return wcsearch_get_tax_terms_from_args($tax, $query_string);
 }
 
 function wcsearch_get_tax_terms_from_args($tax, $args) {
 	$query = false;
 	$relation = false;
-
+	
+	// back compatibility
+	if (empty($args[$tax]) && !empty($args['field_' . $tax])) {
+		$tax = 'field_' . $tax;
+	}
+	
 	if (!empty($args[$tax])) {
 		if (is_array($args[$tax])) {
 			$query = implode(",", $args[$tax]);
@@ -1795,6 +1749,10 @@ function wcsearch_get_count($item, &$counter_number = false) {
 			$counter_class = 'wcsearch-item-option-' . esc_attr($option);
 		}
 	}
+	if (isset($item['hours'])) {
+		$counter_data = 'data-hours=' . esc_attr($item['hours']);
+		$counter_class = 'wcsearch-item-hours-' . esc_attr($item['hours']);
+	}
 	if (isset($item['ratings'])) {
 		$option = $item['ratings'];
 		if (in_array($option, array('1', '2', '3', '4', '5'))) {
@@ -1844,7 +1802,11 @@ function wcsearch_get_count_num($item, $nolimit = false, $empty_query = false) {
 		$term = $item['term'];
 		
 		if (isset($term->taxonomy)) {
-			$taxonomies[$term->taxonomy]['query'] = $term->term_id;
+			if (!empty($taxonomies) && wcsearch_getValue($taxonomies[$term->taxonomy], 'relation') == 'AND') {
+				$taxonomies[$term->taxonomy]['query'] .= ','.$term->term_id;
+			} else {
+				$taxonomies[$term->taxonomy]['query'] = $term->term_id;
+			}
 			
 			if (isset($counter_calls_count[$term->taxonomy])) {
 				$counter_calls_count[$term->taxonomy]++;
@@ -1882,6 +1844,12 @@ function wcsearch_get_count_num($item, $nolimit = false, $empty_query = false) {
 				$query_string['onsale'] = 1;
 				break;
 		}
+	}
+	
+	if (isset($item['hours'])) {
+		$option = $item['hours'];
+		
+		$query_string[$option] = 1;
 	}
 	
 	if (isset($item['ratings'])) {
@@ -1924,7 +1892,12 @@ function wcsearch_get_count_num($item, $nolimit = false, $empty_query = false) {
 		$used_by = 'wc';
 	}
 	
-	$use_cache = 1;
+	if (isset($item['hours'])) {
+		$use_cache = 0;
+	} else {
+		$use_cache = 1;
+	}
+	$use_cache = apply_filters("wcsearch_use_cache", $use_cache);
 	
 	if ($use_cache) {
 		global $wpdb, $wcsearch_cache;
@@ -1997,7 +1970,7 @@ function wcsearch_geocode_functions() {
 
 	$options = array();
 
-	if (defined('W2DC_VERSION')) {
+	if (defined('W2DC_VERSION') || defined('W2DCF_VERSION')) {
 		if (get_option("w2dc_map_type") == 'none') {
 			return false;
 		}
@@ -2034,123 +2007,6 @@ function wcsearch_geocode_functions() {
 	$options['my_location_button_error'] = esc_html__('GeoLocation service does not work on your device!', 'WCSEARCH');
 	
 	return $options;
-}
-
-function wcsearch_geocode_enqueue_scripts_styles() {
-
-	if (defined('W2DC_VERSION')) {
-		if (get_option("w2dc_map_type") == 'none') {
-			return false;
-		}
-	
-		if (w2dc_getMapEngine() == 'mapbox') {
-			wp_register_script('w2dc_mapbox_gl', 'https://api.tiles.mapbox.com/mapbox-gl-js/' . W2DC_MAPBOX_VERSION . '/mapbox-gl.js');
-			wp_enqueue_script('w2dc_mapbox_gl');
-			wp_register_script('w2dc_mapbox', W2DC_RESOURCES_URL . 'js/mapboxgl.js', array('jquery'), W2DC_VERSION_TAG, true);
-			wp_enqueue_script('w2dc_mapbox');
-		} else {
-			wp_register_script('w2dc_google_maps', W2DC_RESOURCES_URL . 'js/google_maps.js', array('jquery'), W2DC_VERSION_TAG, true);
-			wp_enqueue_script('w2dc_google_maps');
-		}
-		
-		wp_localize_script(
-				'w2dc_js_functions',
-				'w2dc_maps_callback',
-				array(
-						'callback' => 'w2dc_load_maps_api'
-				)
-		);
-	}
-	if (defined('W2GM_VERSION')) {
-		wp_register_script('w2gm_google_maps', W2GM_RESOURCES_URL . 'js/google_maps.js', array('jquery'), W2GM_VERSION, true);
-		wp_enqueue_script('w2gm_google_maps');
-	}
-	if (defined('W2MB_VERSION')) {
-		wp_register_script('w2mb_mapbox_gl', 'https://api.tiles.mapbox.com/mapbox-gl-js/' . W2MB_MAPBOX_VERSION . '/mapbox-gl.js');
-		wp_enqueue_script('w2mb_mapbox_gl');
-		wp_register_script('w2mb_mapbox', W2MB_RESOURCES_URL . 'js/mapboxgl.js', array('jquery'), W2MB_VERSION, true);
-		wp_enqueue_script('w2mb_mapbox');
-	}
-}
-
-function wcsearch_enqueue_global_vars() {
-	global $sitepress;
-	
-	if (defined('W2DC_VERSION')) {
-		if (get_option("w2dc_map_type") == 'none') {
-			return false;
-		}
-
-		echo 'var w2dc_js_objects = ' . json_encode(
-			array(
-					'lang' => (($sitepress && get_option('w2dc_map_language_from_wpml')) ? ICL_LANGUAGE_CODE : apply_filters('w2dc_map_language', '')),
-			)
-		) . ';
-';
-		echo 'var w2dc_maps_callback = ' . json_encode(
-			array(
-					'callback' => '',
-			)
-		) . ';
-';
-		echo 'var w2dc_maps_objects = ' . json_encode(
-			array(
-					'notinclude_maps_api' => 0,
-					'google_api_key' => get_option('w2dc_google_api_key'),
-					'mapbox_api_key' => get_option('w2dc_mapbox_api_key'),
-			)
-		) . ';
-';
-	}
-	
-	if (defined('W2GM_VERSION')) {
-
-		echo 'var w2dc_js_objects = ' . json_encode(
-				array(
-						'lang' => (($sitepress && get_option('w2dc_map_language_from_wpml')) ? ICL_LANGUAGE_CODE : apply_filters('w2dc_map_language', '')),
-				)
-		) . ';
-';
-
-		echo 'var w2gm_maps_callback = ' . json_encode(
-				array(
-						'callback' => '',
-				)
-		) . ';
-';
-
-		echo 'var w2gm_maps_objects = ' . json_encode(
-				array(
-						'notinclude_maps_api' => 0,
-						'google_api_key' => get_option('w2gm_google_api_key'),
-						'mapbox_api_key' => get_option('w2gm_mapbox_api_key'),
-				)
-		) . ';
-';
-	}
-	
-	if (defined('W2MB_VERSION')) {
-		echo 'var w2mb_js_objects = ' . json_encode(
-				array(
-						'lang' => (($sitepress && get_option('w2mb_map_language_from_wpml')) ? ICL_LANGUAGE_CODE : apply_filters('w2mb_map_language', '')),
-				)
-		) . ';
-';
-		echo 'var w2mb_maps_callback = ' . json_encode(
-				array(
-						'callback' => '',
-				)
-		) . ';
-';
-		echo 'var w2mb_maps_objects = ' . json_encode(
-				array(
-						'notinclude_maps_api' => 0,
-						'mapbox_api_key' => get_option('w2mb_mapbox_api_key'),
-				)
-		) . ';
-';
-	}
-
 }
 
 function wcsearch_get_all_taxonomies() {
@@ -2218,6 +2074,25 @@ function wcsearch_wrapper_get_taxonomy($tax_name) {
 	}
 }
 
+function wcsearch_get_category_parents($id, $tax, &$chain = array()) {
+
+	$parent = get_term($id, $tax);
+	
+	if (is_wp_error($parent) || !$parent) {
+		return array();
+	}
+
+	$name = $parent->name;
+	
+	$chain[] = $name;
+
+	if ($parent->parent && ($parent->parent != $parent->term_id)) {
+		wcsearch_get_category_parents($parent->parent, $tax, $chain);
+	}
+	
+	return $chain;
+}
+
 function wcsearch_wrapper_get_categories($categories_options) {
 
 	$tax_name = $categories_options['taxonomy'];
@@ -2225,6 +2100,10 @@ function wcsearch_wrapper_get_categories($categories_options) {
 	$select_fields = apply_filters("wcsearch_select_fields", array());
 	
 	if (in_array($tax_name, $select_fields)) {
+
+		if (isset($categories_options['parent']) && $categories_options['parent'] != 0) {
+			return array();
+		}
 
 		$selection_items = array();
 		
@@ -2296,6 +2175,20 @@ function wcsearch_wrapper_get_categories($categories_options) {
 		$terms = get_categories($options);
 		
 		foreach ($terms AS $key=>$term) {
+
+			if (isset($options['depth'])) {
+
+				$chain = array();
+
+				wcsearch_get_category_parents($term->term_id, $term->taxonomy, $chain);
+				
+				if (count($chain) > $options['depth']) {
+					unset($terms[$key]);
+					
+					continue;
+				}
+			}
+
 			$item['term'] = $term;
 			
 			if (!empty($categories_options['exact_terms']) && !in_array($term->term_id, $categories_options['exact_terms']) && !in_array($term->slug, $categories_options['exact_terms'])) {
@@ -2553,7 +2446,7 @@ function wcsearch_wrap_keywords_examples($example) {
 	}
 }
 
-function wcsearch_print_suggestions_code($suggestions) {
+function wcsearch_print_suggestions_code($try_to_search_text, $suggestions) {
 	if ($suggestions) {
 		$examples = explode(',', $suggestions);
 		$wrapped = array_map(
@@ -2563,7 +2456,7 @@ function wcsearch_print_suggestions_code($suggestions) {
 		$suggestions = implode(', ', $wrapped);
 	?>
 	<p class="wcsearch-search-suggestions">
-		<?php esc_html_e("Try to search: ", "WCSEARCH"); ?>
+		<?php echo (esc_html__("Try to search", "WCSEARCH") != 'Try to search') ? esc_html__("Try to search", "WCSEARCH") : $try_to_search_text; ?>
 		<?php $suggestions = explode(',', $suggestions); ?>
 		<?php foreach ($suggestions AS $label): ?>
 		<label><?php echo $label; // it was already escaped, contains HTML! ?></label>
@@ -2571,6 +2464,27 @@ function wcsearch_print_suggestions_code($suggestions) {
 	</p>
 	<?php
 	}
+}
+
+function wcsearch_get_term_option($terms_options_str, $term_id, $field) {
+
+	$terms_options = json_decode($terms_options_str, true);
+	
+	if (isset($terms_options[$term_id][$field])) {
+		return $terms_options[$term_id][$field];
+	}
+}
+
+function wcsearch_get_luma_color($color) {
+	$color = substr($color,1);
+	$r = hexdec(substr($color,0,2));
+	$g = hexdec(substr($color,2,2));
+	$b = hexdec(substr($color,4,2));
+	
+
+	$luma = 0.2126 * $r + 0.7152 * $g + 0.0722 * $b; // per ITU-R BT.709
+
+	return $luma;
 }
 
 ?>

@@ -10,7 +10,7 @@
 			<tr>
 				<th scope="row">
 					<label><?php esc_html_e('Purchase code', 'WCSEARCH'); ?><span class="wcsearch-red-asterisk">*</span></label>
-					<p>Use purchase code from your codecanyon <a href="https://codecanyon.net/downloads" target="_blank">downloads page</a></p>
+					<p>You should receive purchase (license) code after purchase <div class="w2dc-license-support-checker" data-nonce="<?php echo wp_create_nonce('w2dc_license_support_checker_nonce'); ?>"></div></p>
 				</th>
 				<td>
 					<input
@@ -19,20 +19,6 @@
 						type="text"
 						class="regular-text"
 						value="<?php echo get_option("wcsearch_purchase_code"); ?>" />
-				</td>
-			</tr>
-			<tr>
-				<th scope="row">
-					<label><?php esc_html_e('Access token', 'WCSEARCH'); ?></label>
-					<p>Required for automatic updates. Generate an Envato API Personal Token by clicking this <a href="https://build.envato.com/create-token/?purchase:download=t&purchase:verify=t&purchase:list=t" target="_blank">link</a></p>
-				</th>
-				<td>
-					<input
-						name="wcsearch_access_token"
-						id="wcsearch_access_token"
-						type="text"
-						class="regular-text"
-						value="<?php echo get_option("wcsearch_access_token"); ?>" />
 				</td>
 			</tr>
 		</tbody>

@@ -7,7 +7,7 @@ $wcsearch_model_options = array(
 						"type" => "string",
 						"name" => "title",
 						"title" => esc_html__("Title", "WCSEARCH"),
-						"value" => "",
+						"value" => esc_html__("Keywords", "WCSEARCH"),
 				),
 				array(
 						"type" => "string",
@@ -30,8 +30,14 @@ $wcsearch_model_options = array(
 				),
 				array(
 						"type" => "string",
-						"name" => "suggestions",
-						"title" => esc_html__("Keywords examples", "WCSEARCH"),
+						"name" => "try_to_search_text",
+						"title" => esc_html__("Try to search text", "WCSEARCH"),
+						"value" => esc_html__("Try to search", "WCSEARCH"),
+				),
+				array(
+						"type" => "string",
+						"name" => "keywords_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
 						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
 						"value" => "sport,business,event",
 				),
@@ -90,7 +96,7 @@ $wcsearch_model_options = array(
 								"self" => esc_html__("Open in same window", "WCSEARCH"),
 						),
 						"value" => "blank",
-						"dependency" => array('autocomplete' => 1),
+						"dependency" => array('autocomplete' => 1, 'do_links' => '1'),
 				),
 		),
 		'string' => array(
@@ -121,8 +127,14 @@ $wcsearch_model_options = array(
 				),
 				array(
 						"type" => "string",
-						"name" => "suggestions",
-						"title" => esc_html__("Keywords examples", "WCSEARCH"),
+						"name" => "try_to_search_text",
+						"title" => esc_html__("Try to search text", "WCSEARCH"),
+						"value" => esc_html__("Try to search", "WCSEARCH"),
+				),
+				array(
+						"type" => "string",
+						"name" => "keywords_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
 						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
 						"value" => "sport,business,event",
 				),
@@ -155,8 +167,14 @@ $wcsearch_model_options = array(
 				),
 				array(
 						"type" => "string",
-						"name" => "suggestions",
-						"title" => esc_html__("Address examples", "WCSEARCH"),
+						"name" => "try_to_search_text",
+						"title" => esc_html__("Try to search text", "WCSEARCH"),
+						"value" => esc_html__("Try to search", "WCSEARCH"),
+				),
+				array(
+						"type" => "string",
+						"name" => "address_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
 						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
 						"value" => "Los Angeles, US Capitol, Central Park NY",
 				),
@@ -271,6 +289,7 @@ $wcsearch_model_options = array(
 						"description" => "Example: 1,5,10,15,20 or 1-20",
 						"value" => "",
 						//"value" => "min, 1, 10, 50, 100, 500, 1000, max",
+						"dependency" => array('mode' => 'range,single_slider,min_max_one_dropdown,min_max_two_dropdowns,radios'),
 				),
 				array(
 						"type" => "dependency",
@@ -537,10 +556,16 @@ $wcsearch_model_options = array(
 				),
 				array(
 						"type" => "string",
+						"name" => "string_label",
+						"title" => esc_html__("Label", "WCSEARCH"),
+						"description" => "Example: Search in radius",
+						"value" => "Search in radius",
+				),
+				array(
+						"type" => "string",
 						"name" => "min_max_options",
 						"title" => esc_html__("Min-Max options", "WCSEARCH"),
 						"description" => "Example: 1,5,10,15,20 or 0-20",
-						"value" => "",
 						"value" => "0-30",
 				),
 				array(
@@ -627,8 +652,10 @@ $wcsearch_model_options = array(
 								"dropdown_keywords" => esc_html__("Single dropdown + keywords", "WCSEARCH"),
 								"hierarhical_dropdown" => esc_html__("Heirarhical dropdown", "WCSEARCH"),
 								"multi_dropdown" => esc_html__("Multi dropdown", "WCSEARCH"),
-								"radios" => esc_html__("Radio buttons", "WCSEARCH"),
+								"radios" => esc_html__("Radios", "WCSEARCH"),
+								"radios_buttons" => esc_html__("Radio buttons", "WCSEARCH"),
 								"checkboxes" => esc_html__("Checkboxes", "WCSEARCH"),
+								"checkboxes_buttons" => esc_html__("Checkboxes buttons", "WCSEARCH"),
 								"range" => esc_html__("Range slider", "WCSEARCH"),
 								"single_slider" => esc_html__("Single slider", "WCSEARCH"),
 						),
@@ -636,11 +663,63 @@ $wcsearch_model_options = array(
 				),
 				array(
 						"type" => "string",
-						"name" => "suggestions",
-						"title" => esc_html__("Address examples", "WCSEARCH"),
+						"name" => "placeholder",
+						"title" => esc_html__("Placeholder", "WCSEARCH"),
+						"value" => "",
+						"dependency" => array('mode' => 'dropdown,dropdown_keywords,dropdown_address,multi_dropdown'),
+				),
+				array(
+						"type" => "string",
+						"name" => "placeholders",
+						"title" => esc_html__("Placeholder", "WCSEARCH"),
+						//"value" => array(""),
+						//"multi" => 1,
+						"dependency" => array('mode' => 'hierarhical_dropdown'),
+				),
+				array(
+						"type" => "string",
+						"name" => "try_to_search_text",
+						"title" => esc_html__("Try to search text", "WCSEARCH"),
+						"value" => esc_html__("Try to search", "WCSEARCH"),
+						"dependency" => array('mode' => 'dropdown_address,dropdown_keywords'),
+				),
+				array(
+						"type" => "string",
+						"name" => "address_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
 						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
 						"value" => "Los Angeles, US Capitol, Central Park NY",
 						"dependency" => array('mode' => 'dropdown_address'),
+				),
+				array(
+						"type" => "string",
+						"name" => "keywords_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
+						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
+						"value" => "sport,business,event",
+						"dependency" => array('mode' => 'dropdown_keywords'),
+				),
+				array(
+						"type" => "select",
+						"name" => "do_links",
+						"title" => esc_html__("Links to products in autocomplete suggestion", "WCSEARCH"),
+						"options" => array(
+								"0" => esc_html__("No", "WCSEARCH"),
+								"1" => esc_html__("Yes", "WCSEARCH"),
+						),
+						"value" => "1",
+						"dependency" => array('mode' => 'dropdown_keywords'),
+				),
+				array(
+						"type" => "select",
+						"name" => "do_links_blank",
+						"title" => esc_html__("How to open links", "WCSEARCH"),
+						"options" => array(
+								"blank" => esc_html__("Open in new window", "WCSEARCH"),
+								"self" => esc_html__("Open in same window", "WCSEARCH"),
+						),
+						"value" => "blank",
+						"dependency" => array('mode' => 'dropdown_keywords', 'do_links' => '1'),
 				),
 				array(
 						"type" => "select",
@@ -651,7 +730,7 @@ $wcsearch_model_options = array(
 								"AND" => "AND",
 						),
 						"value" => "OR",
-						"dependency" => array('mode' => 'multi_dropdown,checkboxes'),
+						"dependency" => array('mode' => 'multi_dropdown,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -663,7 +742,7 @@ $wcsearch_model_options = array(
 								"3" => "3",
 						),
 						"value" => 1,
-						"dependency" => array('mode' => 'dropdown,dropdown_keywords,multi_dropdown,radios,checkboxes'),
+						"dependency" => array('mode' => 'dropdown,dropdown_address,dropdown_keywords,multi_dropdown,radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -674,7 +753,7 @@ $wcsearch_model_options = array(
 								"1" => esc_html__("Yes", "WCSEARCH"),
 						),
 						"value" => 1,
-						"dependency" => array('mode' => 'dropdown_keywords'),
+						"dependency" => array('mode' => 'dropdown,dropdown_address,dropdown_keywords'),
 				),
 				array(
 						"type" => "select",
@@ -688,14 +767,14 @@ $wcsearch_model_options = array(
 								5 => 5,
 						),
 						"value" => 2,
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "string",
 						"name" => "height_limit",
 						"title" => esc_html__("Cut long-list items by height (in pixels)", "WCSEARCH"),
 						"value" => 280,
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -706,21 +785,21 @@ $wcsearch_model_options = array(
 								"use_scroll" => esc_html__("Use only scroll", "WCSEARCH"),
 						),
 						"value" => "show_more_less",
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "string",
 						"name" => "text_open",
 						"title" => esc_html__("Text to open new items", "WCSEARCH"),
 						"value" => esc_html__("show all"),
-						"dependency" => array('mode' => 'radios,checkboxes', 'how_to_limit' => 'show_more_less'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons', 'how_to_limit' => 'show_more_less'),
 				),
 				array(
 						"type" => "string",
 						"name" => "text_close",
 						"title" => esc_html__("Text to hide", "WCSEARCH"),
 						"value" => esc_html__("hide"),
-						"dependency" => array('mode' => 'radios,checkboxes', 'how_to_limit' => 'show_more_less'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons', 'how_to_limit' => 'show_more_less'),
 				),
 				array(
 						"type" => "select",
@@ -731,7 +810,7 @@ $wcsearch_model_options = array(
 								"1" => esc_html__("Yes", "WCSEARCH"),
 						),
 						"value" => "0",
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -743,7 +822,7 @@ $wcsearch_model_options = array(
 								"count" => esc_html__("By count", "WCSEARCH"),
 						),
 						"value" => "menu_order",
-						"dependency" => array('mode' => 'dropdown,dropdown_keywords,hierarhical_dropdown,multi_dropdown,radios,checkboxes,range,single_slider'),
+						"dependency" => array('mode' => 'dropdown,dropdown_address,dropdown_keywords,hierarhical_dropdown,multi_dropdown,radios,radios_buttons,checkboxes,checkboxes_buttons,range,single_slider'),
 				),
 				array(
 						"type" => "select",
@@ -755,7 +834,7 @@ $wcsearch_model_options = array(
 						),
 						"value" => "ASC",
 						"dependency" => array(
-								'mode' => 'dropdown,dropdown_keywords,hierarhical_dropdown,multi_dropdown,radios,checkboxes,range,single_slider',
+								'mode' => 'dropdown,dropdown_address,dropdown_keywords,hierarhical_dropdown,multi_dropdown,radios,radios_buttons,checkboxes,checkboxes_buttons,range,single_slider',
 								'orderby' => 'name,count',
 						),
 				),
@@ -809,6 +888,11 @@ $wcsearch_model_options = array(
 						"value" => "1",
 						"dependency" => array("dependency_tax" => ""),
 				),
+				array(
+						"type" => "hidden",
+						"name" => "terms_options",
+						"value" => "",
+				),
 		),
 		"select" => array(
 				array(
@@ -838,8 +922,10 @@ $wcsearch_model_options = array(
 								"dropdown" => esc_html__("Single dropdown", "WCSEARCH"),
 								"dropdown_keywords" => esc_html__("Single dropdown + keywords", "WCSEARCH"),
 								"multi_dropdown" => esc_html__("Multi dropdown", "WCSEARCH"),
-								"radios" => esc_html__("Radio buttons", "WCSEARCH"),
+								"radios" => esc_html__("Radios", "WCSEARCH"),
+								"radios_buttons" => esc_html__("Radio buttons", "WCSEARCH"),
 								"checkboxes" => esc_html__("Checkboxes", "WCSEARCH"),
+								"checkboxes_buttons" => esc_html__("Checkboxes buttons", "WCSEARCH"),
 								"range" => esc_html__("Range slider", "WCSEARCH"),
 								"single_slider" => esc_html__("Single slider", "WCSEARCH"),
 						),
@@ -847,11 +933,32 @@ $wcsearch_model_options = array(
 				),
 				array(
 						"type" => "string",
-						"name" => "suggestions",
-						"title" => esc_html__("Address examples", "WCSEARCH"),
+						"name" => "try_to_search_text",
+						"title" => esc_html__("Try to search text", "WCSEARCH"),
+						"value" => esc_html__("Try to search", "WCSEARCH"),
+				),
+				array(
+						"type" => "string",
+						"name" => "placeholder",
+						"title" => esc_html__("Placeholder", "WCSEARCH"),
+						"value" => "",
+						"dependency" => array('mode' => 'dropdown,dropdown_keywords,dropdown_address,hierarhical_dropdown,multi_dropdown'),
+				),
+				array(
+						"type" => "string",
+						"name" => "address_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
 						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
 						"value" => "Los Angeles, US Capitol, Central Park NY",
 						"dependency" => array('mode' => 'dropdown_address'),
+				),
+				array(
+						"type" => "string",
+						"name" => "keywords_suggestions",
+						"title" => esc_html__("Try to search", "WCSEARCH"),
+						"description" => esc_html__("Comma-separated list of suggestions to try to search", "WCSEARCH"),
+						"value" => "sport,business,event",
+						"dependency" => array('mode' => 'dropdown_keywords'),
 				),
 				array(
 						"type" => "select",
@@ -862,7 +969,7 @@ $wcsearch_model_options = array(
 								"AND" => "AND",
 						),
 						"value" => "OR",
-						"dependency" => array('mode' => 'multi_dropdown,checkboxes'),
+						"dependency" => array('mode' => 'multi_dropdown,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -873,7 +980,7 @@ $wcsearch_model_options = array(
 								"1" => esc_html__("Yes", "WCSEARCH"),
 						),
 						"value" => 1,
-						"dependency" => array('mode' => 'dropdown,dropdown_keywords'),
+						"dependency" => array('mode' => 'dropdown,dropdown_address,dropdown_keywords'),
 				),
 				array(
 						"type" => "select",
@@ -887,14 +994,14 @@ $wcsearch_model_options = array(
 								5 => 5,
 						),
 						"value" => 2,
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "string",
 						"name" => "height_limit",
 						"title" => esc_html__("Cut long-list items by height (in pixels)", "WCSEARCH"),
 						"value" => 280,
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -905,21 +1012,21 @@ $wcsearch_model_options = array(
 								"use_scroll" => esc_html__("Use only scroll", "WCSEARCH"),
 						),
 						"value" => "show_more_less",
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "string",
 						"name" => "text_open",
 						"title" => esc_html__("Text to open new items", "WCSEARCH"),
 						"value" => esc_html__("show all"),
-						"dependency" => array('mode' => 'radios,checkboxes', 'how_to_limit' => 'show_more_less'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons', 'how_to_limit' => 'show_more_less'),
 				),
 				array(
 						"type" => "string",
 						"name" => "text_close",
 						"title" => esc_html__("Text to hide", "WCSEARCH"),
 						"value" => esc_html__("hide"),
-						"dependency" => array('mode' => 'radios,checkboxes', 'how_to_limit' => 'show_more_less'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons', 'how_to_limit' => 'show_more_less'),
 				),
 				array(
 						"type" => "select",
@@ -930,7 +1037,7 @@ $wcsearch_model_options = array(
 								"1" => esc_html__("Yes", "WCSEARCH"),
 						),
 						"value" => "0",
-						"dependency" => array('mode' => 'radios,checkboxes'),
+						"dependency" => array('mode' => 'radios,radios_buttons,checkboxes,checkboxes_buttons'),
 				),
 				array(
 						"type" => "select",
@@ -942,7 +1049,7 @@ $wcsearch_model_options = array(
 								"count" => esc_html__("By count", "WCSEARCH"),
 						),
 						"value" => "menu_order",
-						"dependency" => array('mode' => 'dropdown,dropdown_keywords,multi_dropdown,radios,checkboxes,range,single_slider'),
+						"dependency" => array('mode' => 'dropdown,dropdown_keywords,multi_dropdown,radios,radios_buttons,checkboxes,checkboxes_buttons,range,single_slider'),
 				),
 				array(
 						"type" => "select",
@@ -954,7 +1061,7 @@ $wcsearch_model_options = array(
 						),
 						"value" => "ASC",
 						"dependency" => array(
-								'mode' => 'dropdown,dropdown_keywords,multi_dropdown,radios,checkboxes,range,single_slider',
+								'mode' => 'dropdown,dropdown_keywords,multi_dropdown,radios,radios_buttons,checkboxes,checkboxes_buttons,range,single_slider',
 								'orderby' => 'name,count',
 						),
 				),
@@ -1133,6 +1240,46 @@ $wcsearch_model_options = array(
 						"value" => "#FFB300",
 				),
 		),
+		"hours" => array(
+				array(
+						"type" => "string",
+						"name" => "label",
+						"title" => esc_html__("Label text", "WCSEARCH"),
+						"value" => esc_html__("open now"),
+				),
+				array(
+						"type" => "select",
+						"name" => "display",
+						"title" => esc_html__("Display as", "WCSEARCH"),
+						"options" => array(
+								"checkbox" => esc_html__("Checkbox", "WCSEARCH"),
+								"button" => esc_html__("Button", "WCSEARCH"),
+						),
+						"value" => "checkbox",
+				),
+				array(
+						"type" => "select",
+						"name" => "align",
+						"title" => esc_html__("Align", "WCSEARCH"),
+						"options" => array(
+								"left" => esc_html__("Left", "WCSEARCH"),
+								"center" => esc_html__("Center", "WCSEARCH"),
+								"right" => esc_html__("Right", "WCSEARCH"),
+						),
+						"value" => "left",
+						"dependency" => array("display" => "checkbox"),
+				),
+				array(
+						"type" => "select",
+						"name" => "counter",
+						"title" => esc_html__("Show counter", "WCSEARCH"),
+						"options" => array(
+								"0" => esc_html__("No", "WCSEARCH"),
+								"1" => esc_html__("Yes", "WCSEARCH"),
+						),
+						"value" => "0",
+				),
+		),
 );
 
 
@@ -1181,10 +1328,14 @@ function wcsearch_filter_model_options() {
 	foreach ($wcsearch_model_options AS $type=>$options) {
 
 		// add taxonomies in dependency fields
+		//
+		// "categories" instead of "w2dc-category",
+		// "locations" instead of "w2dc-location",
+		// "tags" instead of "w2dc-tag"
 		foreach ($options AS $key=>$option) {
 			if ($option['type'] == 'dependency') {
 				foreach ($taxes AS $tax_slug=>$tax_name) {
-					$wcsearch_model_options[$type][$key]['options'][$tax_slug] = $tax_names[$tax_slug];
+					$wcsearch_model_options[$type][$key]['options'][$tax_name] = $tax_names[$tax_slug];
 				}
 			}
 		}
@@ -1374,7 +1525,7 @@ class wcsearch_search_forms_manager {
 	
 		$wcsearch_columns['wcsearch_shortcode'] = __('Shortcode', 'WCSEARCH');
 	
-		return array_slice($columns, 1, 1, true) + $wcsearch_columns + array_slice($columns, 1, count($columns)-1, true);
+		return array_slice($columns, 0, 2, true) + $wcsearch_columns + array_slice($columns, 2, count($columns)-2, true);
 	}
 	
 	public function manage_wcsearch_table_rows($column, $post_id) {

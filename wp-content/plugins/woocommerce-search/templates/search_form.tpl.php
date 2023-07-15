@@ -16,7 +16,7 @@ $search_form->getSearchFormStyles();
 	<?php endif; ?>
 	
 	<?php if ((current_user_can("manage_options") || (defined('WCSEARCH_DEMO') && WCSEARCH_DEMO)) && !empty($args['id'])): ?>
-	<?php wcsearch_getEditFormIcon(get_edit_post_link($args['id'])); ?>
+	<?php wcsearch_getEditFormIcon($args['id']); ?>
 	<?php endif; ?>
 	<?php do_action("wcsearch_pre_search_form", $args); ?>
 	<form <?php echo $search_form->getOptionsString(); ?>>

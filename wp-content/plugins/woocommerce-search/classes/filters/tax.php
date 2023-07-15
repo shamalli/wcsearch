@@ -3,68 +3,70 @@
 add_filter("wcsearch_query_args_validate", "wcsearch_query_args_validate_tax");
 function wcsearch_query_args_validate_tax($args) {
 
-	// the result of wcsearch_get_tax_terms_from_query_string() function
-	foreach ($args['taxonomies'] AS $tax_name=>$query_array) {
-		if (!empty($query_array['query'])) {
-			if (!is_array($query_array['query'])) {
-				$terms = explode(',', $query_array['query']);
-			} else {
-				$terms = array_filter($query_array['query']);
-			}
-			
-			if (count($terms) == 1) {
-				$terms_range = explode('-', $terms[0]);
-				if (count($terms_range) == 2) {
-					$selection_items = wcsearch_wrapper_get_categories(array(
-							'taxonomy' => $tax_name,
-							'orderby' => 'name',
-							'order' => 'ASC',
-					));
-					
-					$min_max_options = array();
-					foreach ($selection_items AS $term) {
-						$min_max_options[$term->term_id] = $term->term_id;
-					}
-					
-					if ($terms_range[0] === '' || $terms_range[1] === '') {
-						if ($terms_range[0] === '') {
-							$offset = 0;
-						} else {
-							$offset = -1;
-							foreach ($min_max_options AS $term_id) {
-								$offset++;
-								if ($term_id == $terms_range[0]) {
-									break;
-								}
-							}
+	if (!empty($args['taxonomies'])) {
+		// the result of wcsearch_get_tax_terms_from_query_string() function
+		foreach ($args['taxonomies'] AS $tax_name=>$query_array) {
+			if (!empty($query_array['query'])) {
+				if (!is_array($query_array['query'])) {
+					$terms = explode(',', $query_array['query']);
+				} else {
+					$terms = array_filter($query_array['query']);
+				}
+				
+				if (count($terms) == 1) {
+					$terms_range = explode('-', $terms[0]);
+					if (count($terms_range) == 2) {
+						$selection_items = wcsearch_wrapper_get_categories(array(
+								'taxonomy' => $tax_name,
+								'orderby' => 'name',
+								'order' => 'ASC',
+						));
+						
+						$min_max_options = array();
+						foreach ($selection_items AS $term) {
+							$min_max_options[$term->term_id] = $term->term_id;
 						}
-						if ($terms_range[1] === '') {
-							$length = count($selection_items);
-						} else {
-							$length = 0;
-							foreach ($min_max_options AS $term_id) {
-								$length++;
-								if ($length > $offset) {
-									if ($term_id == $terms_range[1]) {
+						
+						if ($terms_range[0] === '' || $terms_range[1] === '') {
+							if ($terms_range[0] === '') {
+								$offset = 0;
+							} else {
+								$offset = -1;
+								foreach ($min_max_options AS $term_id) {
+									$offset++;
+									if ($term_id == $terms_range[0]) {
 										break;
 									}
 								}
 							}
+							if ($terms_range[1] === '') {
+								$length = count($selection_items);
+							} else {
+								$length = 0;
+								foreach ($min_max_options AS $term_id) {
+									$length++;
+									if ($length > $offset) {
+										if ($term_id == $terms_range[1]) {
+											break;
+										}
+									}
+								}
+							}
+							
+							$terms = array_slice(array_flip($min_max_options), $offset, $length);
+						} else {
+							$terms = array_slice(
+									$min_max_options,
+									array_search($terms_range[0], array_keys($min_max_options)),
+									array_search($terms_range[1], array_keys($min_max_options)) - 
+									array_search($terms_range[0], array_keys($min_max_options)) + 1
+							);
 						}
-						
-						$terms = array_slice(array_flip($min_max_options), $offset, $length);
-					} else {
-						$terms = array_slice(
-								$min_max_options,
-								array_search($terms_range[0], array_keys($min_max_options)),
-								array_search($terms_range[1], array_keys($min_max_options)) - 
-								array_search($terms_range[0], array_keys($min_max_options)) + 1
-						);
 					}
 				}
+				
+				$args['taxonomies'][$tax_name]['terms'] = $terms;
 			}
-			
-			$args['taxonomies'][$tax_name]['terms'] = $terms;
 		}
 	}
 	
@@ -111,17 +113,26 @@ function wcsearch_query_args_tax($q_args, $args) {
 						}
 					}
 				} else {
+					
+					$field = 'term_id';
+					foreach ($terms AS $term) {
+						if (!is_numeric($term)) {
+							$field = 'slug';
+							break;
+						}
+					}
+					
 					if ($relation == 'OR') {
 						$q_args['tax_query'][] = array(
 								'taxonomy' => $tax_name,
-								'field'    => 'term_id',
+								'field'    => $field,
 								'terms'    => $terms,
 						);
 					} elseif ($relation == 'AND') {
 						foreach ($terms AS $term) {
 							$tax_query_array[] = array(
 									'taxonomy' => $tax_name,
-									'field'    => 'term_id',
+									'field'    => $field,
 									'terms'    => $term,
 							);
 						}

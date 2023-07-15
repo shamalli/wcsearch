@@ -6,6 +6,8 @@ var wcsearch_recount_attempts = 0;
 var wcsearch_max_counters = 200;
 var wcsearch_request_processing = false;
 
+var wcsearch_do_scroll = true;
+
 (function($) {
 	"use strict";
 	
@@ -26,6 +28,10 @@ var wcsearch_request_processing = false;
 			$(window).off("beforeunload");
 		}
 	});
+	
+	window.wcsearch_is_model = function() {
+		return $(".wcsearch-search-model-wrapper").length;
+	}
 	
 	window.wcsearch_search_input = (function(input) {
 		this.input = input;
@@ -135,8 +141,24 @@ var wcsearch_request_processing = false;
 				return { name: name, value: val };
 			}
 			
+			if (this.input.find("input.wcsearch-search-terms-buttons-input").length) {
+				var val = this.input.find("input.wcsearch-search-terms-buttons-input").val();
+				var name = this.input.find("input.wcsearch-search-terms-buttons-input").attr("name");
+				
+				if (val) {
+					
+					var result = [{ name: name, value: val }];
+					
+					if (this.input.data("relation") == "AND") {
+						result.push({ name: name+"_relation", value: this.input.data("relation") });
+					}
+					
+					return result;
+				}
+			}
+			
 			if (this.input.find(".wcsearch-main-search-field").length) {
-				if (this.input.data("type") == "tax") {
+				if (this.input.data("type") == "tax" || this.input.data("type") == "select") {
 					var tax_val = this.input.find("[id^=selected_tax]").val();
 					var tax_name = this.input.find("[id^=selected_tax]").prop("name");
 					
@@ -222,9 +244,11 @@ var wcsearch_request_processing = false;
 				return false;
 			}
 			
-			var main_search_field = this.input.find(".wcsearch-main-search-field");
-			if (main_search_field.length) {
-				main_search_field.trigger("reset");
+			// temporarily disable submission on changes while resetting
+			wcsearch_request_processing = true;
+			
+			if (this.input.find(".wcsearch-main-search-field").length) {
+				this.input.find(".wcsearch-main-search-field").trigger("reset");
 			}
 			
 			if (this.input.find(".wcsearch-search-input-1, .wcsearch-search-input-2").length) {
@@ -252,6 +276,12 @@ var wcsearch_request_processing = false;
 				this.input.find("input.wcsearch-search-string-input").val('');
 			}
 			
+			if (this.input.find("input.wcsearch-search-terms-buttons-input").length) {
+				this.input.find("input.wcsearch-search-terms-buttons-input").val('');
+				
+				this.input.find(".wcsearch-search-term-button").removeClass("wcsearch-search-term-button-active");
+			}
+			
 			// range slider
 			if (this.input.find(".wcsearch-range-slider").length) {
 				var slider = this.input.find(".wcsearch-range-slider");
@@ -271,6 +301,8 @@ var wcsearch_request_processing = false;
 				slider.slider("option", "slide")(null, { value: option.min });
 				input.val("");
 			}
+			
+			wcsearch_request_processing = false;
 		},
 		this.is_opened = function() {
 			if (!this.input.hasClass("wcsearch-search-input-closed")) {
@@ -287,6 +319,18 @@ var wcsearch_request_processing = false;
 		}
 	});
 	
+	window.wcsearch_get_luma_color = function(c) {
+		var c = c.substring(1);      // strip #
+		var rgb = parseInt(c, 16);   // convert rrggbb to decimal
+		var r = (rgb >> 16) & 0xff;  // extract red
+		var g = (rgb >>  8) & 0xff;  // extract green
+		var b = (rgb >>  0) & 0xff;  // extract blue
+
+		var luma = 0.2126 * r + 0.7152 * g + 0.0722 * b; // per ITU-R BT.709
+
+		return luma;
+	}
+	
 	window.wcsearch_sticky_scroll = function() {
 		$('.wcsearch-sticky-scroll').each(function() {
 			var element = $(this);
@@ -294,81 +338,94 @@ var wcsearch_request_processing = false;
 			var id = form.data("id");
 			var toppadding = (form.data("toppadding")) ? form.data("toppadding") : 0;
 			
-			if ($("body").hasClass("admin-bar")) {
-				toppadding = toppadding + 32;
-			}
-			
-			if ($('.site-header.header-fixed').length) {
-				var headerHeight = $('.site-header.header-fixed').outerHeight();
-				toppadding = toppadding + headerHeight;
-			}
-
-			if (!$("#wcsearch-scroller-anchor-"+id).length) {
-				var anchor = $("<div>", {
-					id: 'wcsearch-scroller-anchor-'+id
-				});
-				element.before(anchor);
-	
-				var background = $("<div>", {
-					id: 'wcsearch-sticky-scroll-background-'+id,
-					class: 'wcsearch-sticky-scroll-background',
-					style: {position: 'relative'}
-				});
-				element.after(background);
-			}
+			if (element.parents("div[class*='-map-sidebar']").length) {
+				var map_sidebar = element.parents("div[class*='-map-sidebar']");
+				var search_wrapper = map_sidebar.find(".wcsearch-search-wrapper");
+				var listings_wrapper = map_sidebar.find("div[class*='-map-sidebar-listings-wrapper']");
 				
-			window["wcsearch_sticky_scroll_toppadding_"+id] = toppadding;
-	
-			$("#wcsearch-sticky-scroll-background-"+id).position().left = element.position().left;
-			$("#wcsearch-sticky-scroll-background-"+id).position().top = element.position().top;
-			$("#wcsearch-sticky-scroll-background-"+id).width(element.width());
-			$("#wcsearch-sticky-scroll-background-"+id).height(element.height());
-
-			var wcsearch_scroll_function = function(e) {
-				var id = e.data.id;
-				var toppadding = e.data.toppadding;
-				var b = $(document).scrollTop();
-				var d = $("#wcsearch-scroller-anchor-"+id).offset().top - toppadding;
-				var c = e.data.obj;
-				var e = $("#wcsearch-sticky-scroll-background-"+id);
-				
-				c.width(c.parent().width()).css({ 'z-index': 100 });
-		
-				// .wcsearch-scroller-bottom - this is special class used to restrict the area of scroll of map canvas
-				if ($(".wcsearch-scroller-bottom").length) {
-					var f = $(".wcsearch-scroller-bottom").offset().top - (c.height() + toppadding);
-				} else {
-					var f = $(document).height();
+				if (listings_wrapper.length) {
+					var listings_wrapper_height = map_sidebar.height() - search_wrapper.outerHeight();
+					listings_wrapper.height(listings_wrapper_height);
 				}
-		
-				if (f > c.height()) {
-					if (b >= d && b < f) { // fixed
-						c.css({ position: "fixed", top: toppadding });
-						e.css({ position: "relative" });
-					} else { // unfixed
-						if (b <= d) {
-							c.stop().css({ position: "relative", top: "" });
-							e.css({ position: "absolute" });
-						}
-						if (b >= f) {
-							c.css({ position: "absolute" });
-							c.stop().offset({ top: f + toppadding });
-							e.css({ position: "relative" });
-						}
+			} else {
+				if ($("body").hasClass("admin-bar")) {
+					toppadding = toppadding + 32;
+				}
+				
+				if ($(window).height() >= 768) {
+					if ($('.site-header.header-fixed').length) {
+						var headerHeight = $('.site-header.header-fixed').outerHeight();
+						toppadding = toppadding + headerHeight;
 					}
-				} else {
-					c.css({ position: "relative", top: "" });
-					e.css({ position: "absolute" });
 				}
-			};
+	
+				if (!$("#wcsearch-scroller-anchor-"+id).length) {
+					var anchor = $("<div>", {
+						id: 'wcsearch-scroller-anchor-'+id
+					});
+					element.before(anchor);
+		
+					var background = $("<div>", {
+						id: 'wcsearch-sticky-scroll-background-'+id,
+						class: 'wcsearch-sticky-scroll-background',
+						style: {position: 'relative'}
+					});
+					element.after(background);
+				}
+					
+				window["wcsearch_sticky_scroll_toppadding_"+id] = toppadding;
+		
+				$("#wcsearch-sticky-scroll-background-"+id).position().left = element.position().left;
+				$("#wcsearch-sticky-scroll-background-"+id).position().top = element.position().top;
+				$("#wcsearch-sticky-scroll-background-"+id).width(element.width());
+				$("#wcsearch-sticky-scroll-background-"+id).height(element.height());
+	
+				var wcsearch_scroll_function = function(e) {
+					var id = e.data.id;
+					var toppadding = e.data.toppadding;
+					var b = $(document).scrollTop();
+					var d = $("#wcsearch-scroller-anchor-"+id).offset().top - toppadding;
+					var c = e.data.obj;
+					var e = $("#wcsearch-sticky-scroll-background-"+id);
+					
+					c.width(c.parent().width()).css({ 'z-index': 100 });
 			
-			$("#wcsearch-sticky-scroll-background-"+id).css({ position: "relative" });
+					// .wcsearch-scroller-bottom - this is special class used to restrict the area of scroll of map canvas
+					if ($(".wcsearch-scroller-bottom").length) {
+						var f = $(".wcsearch-scroller-bottom").offset().top - (c.height() + toppadding);
+					} else {
+						var f = $(document).height();
+					}
 			
-			//if ($(document).width() >= 768) {
-			var args = {id: id, obj: $(this), toppadding: toppadding};
-			$(window).scroll(args, wcsearch_scroll_function);
-			wcsearch_scroll_function({data: args});
-			//}
+					if (f > c.height()) {
+						if (b >= d && b < f) { // fixed
+							c.css({ position: "fixed", top: toppadding });
+							e.css({ position: "relative" });
+						} else { // unfixed
+							if (b <= d) {
+								c.stop().css({ position: "relative", top: "" });
+								e.css({ position: "absolute" });
+							}
+							if (b >= f) {
+								c.css({ position: "absolute" });
+								c.stop().offset({ top: f + toppadding });
+								e.css({ position: "relative" });
+							}
+						}
+					} else {
+						c.css({ position: "relative", top: "" });
+						e.css({ position: "absolute" });
+					}
+				};
+				
+				$("#wcsearch-sticky-scroll-background-"+id).css({ position: "relative" });
+				
+				//if ($(document).width() >= 768) {
+				var args = {id: id, obj: $(this), toppadding: toppadding};
+				$(window).scroll(args, wcsearch_scroll_function);
+				wcsearch_scroll_function({data: args});
+				//}
+			}
 		});
 	}
 
@@ -392,8 +449,8 @@ var wcsearch_request_processing = false;
 			return false;
 		}
 		
-		$(this).parents(".wcsearch-search-input-radios-column").parent().find(".wcsearch-radio-reset-btn").remove();
-		$(this).parents(".wcsearch-search-model-input-radios-column").parent().find(".wcsearch-radio-reset-btn").remove();
+		$(this).parents(".wcsearch-search-input-terms-column").parent().find(".wcsearch-radio-reset-btn").remove();
+		$(this).parents(".wcsearch-search-model-input-terms-column").parent().find(".wcsearch-radio-reset-btn").remove();
 		
 		wcsearch_create_radio_control_reset($(this));
 	});
@@ -510,7 +567,7 @@ var wcsearch_request_processing = false;
 (function($) {
 	"use strict";
 	
-	$("body").on("click",
+	$(document).on("click",
 			".wcsearch-search-input-closed .wcsearch-search-input-label," +
 			".wcsearch-search-input-opened .wcsearch-search-input-label",
 	function() {
@@ -585,14 +642,70 @@ var wcsearch_request_processing = false;
 		wcsearch_model_update_placeholders();
 	});
 	
-	window.wcsearch_setup_terms_separators = function() {
-		$(".wcsearch-search-input-checkboxes, .wcsearch-search-input-radios, .wcsearch-search-model-input-checkboxes, .wcsearch-search-model-input-radios").each(function() {
-			if ($(this).hasClass("wcsearch-search-input-checkboxes") || $(this).hasClass("wcsearch-search-input-radios")) {
-				// frontend
-				var container = $(this).find(".wcsearch-search-input-terms-columns");
+	$("body").on("click",
+			".wcsearch-search-input .wcsearch-search-term-button .wcsearch-btn," +
+			".wcsearch-search-model-input .wcsearch-search-term-button .wcsearch-btn",
+	function() {
+		if (wcsearch_is_model()) {
+			var input = $(this).parents(".wcsearch-search-model-input");
+		} else {
+			var input = $(this).parents(".wcsearch-search-input");
+		}
+		var btn_wrapper = $(this).parents(".wcsearch-search-term-button");
+		var values = '';
+		
+		if (input.data("mode") == "checkboxes_buttons") {
+			btn_wrapper.toggleClass("wcsearch-search-term-button-active");
+			
+			var selected_terms_ids = [];
+			var selected_terms = input.find(".wcsearch-search-term-button-active");
+			$.each(selected_terms, function() {
+				selected_terms_ids.push($(this).data("term-id"));
+			});
+			if (selected_terms_ids) {
+				values = selected_terms_ids.join(",");
+			}
+		} else if (input.data("mode") == "radios_buttons") {
+			if (btn_wrapper.hasClass("wcsearch-search-term-button-active")) {
+				input.find(".wcsearch-search-term-button").removeClass("wcsearch-search-term-button-active");
 			} else {
+				input.find(".wcsearch-search-term-button").removeClass("wcsearch-search-term-button-active");
+				btn_wrapper.toggleClass("wcsearch-search-term-button-active");
+				values = btn_wrapper.data("term-id");
+			}
+		} else {
+			btn_wrapper.toggleClass("wcsearch-search-term-button-active");
+			if (btn_wrapper.hasClass("wcsearch-search-term-button-active")) {
+				values = btn_wrapper.data("term-id");
+			}
+		}
+		
+		if (wcsearch_is_model()) {
+			input.attr("data-values", values);
+			
+			wcsearch_model_update_placeholders();
+		} else {
+			input.find("input.wcsearch-search-terms-buttons-input").val(values).trigger("change");
+		}
+	});
+	
+	window.wcsearch_setup_terms_separators = function() {
+		$(
+			".wcsearch-search-input-checkboxes," +
+			".wcsearch-search-input-radios," +
+			".wcsearch-search-input-checkboxes_buttons," +
+			".wcsearch-search-input-radios_buttons," +
+			".wcsearch-search-model-input-checkboxes," +
+			".wcsearch-search-model-input-checkboxes_buttons," +
+			".wcsearch-search-model-input-radios," +
+			".wcsearch-search-model-input-radios_buttons"
+		).each(function() {
+			if (wcsearch_is_model()) {
 				// model
 				var container = $(this).find(".wcsearch-search-model-input-terms-columns");
+			} else {
+				// frontend
+				var container = $(this).find(".wcsearch-search-input-terms-columns");
 			}
 			
 			var input_data = $(this).data();
@@ -656,11 +769,23 @@ var wcsearch_request_processing = false;
 	var wcsearch_submit_callback = wcsearch_js_objects.adapter_options[wcsearch_used_by].submit_callback;
 	
 	window.wcsearch_get_loop = function() {
-		var wcsearch_loop_name = "div[id^='"+wcsearch_js_objects.adapter_options[wcsearch_used_by].loop_selector_name+"']";
+		var selectors = wcsearch_js_objects.adapter_options[wcsearch_used_by].loop_selector_name;
 		
-		if ($(wcsearch_loop_name).length) {
-			return $(wcsearch_loop_name);
+		if (!$.isArray(selectors)) {
+			selectors = [wcsearch_js_objects.adapter_options[wcsearch_used_by].loop_selector_name];
 		}
+		
+		var selected_selector;
+		$.each(selectors, function(index, selector_name) {
+			var wcsearch_loop_name = "div[id^='"+selector_name+"']";
+			
+			if ($(wcsearch_loop_name).length) {
+				selected_selector = $(wcsearch_loop_name);
+				return false;
+			}
+		});
+		
+		return selected_selector;
 	}
 	
 	window.wcsearch_add_common_fields = function(post_params, form) {
@@ -727,6 +852,8 @@ var wcsearch_request_processing = false;
 	window.wcsearch_insert_param_in_uri = function(key, value) {
 		var key = encodeURIComponent(key);
 		var value = encodeURIComponent(value);
+		
+		var hash = window.location.hash.substring(1);
 
 		var kvp = document.location.search.substr(1).split('&').filter(Boolean);
 		let i=0;
@@ -746,7 +873,11 @@ var wcsearch_request_processing = false;
 		
 		let params = kvp.join('&');
 
-		window.history.pushState("", "", "?"+params);
+		if (hash) {
+			hash = '#' + hash;
+		}
+
+		window.history.pushState("", "", "?"+params+hash);
 	}
 	
 	window.wcsearch_remove_param_from_uri = function(key) {
@@ -864,12 +995,14 @@ var wcsearch_request_processing = false;
 		var form_id = form.data("id");
 		var hash = form.data("hash");
 		var use_ajax = true;
+		var is_target_url = false;
 		
-		if (form.data("scroll-to") == 'products' && wcsearch_get_loop()) {
+		if (form.data("scroll-to") == 'products' && wcsearch_get_loop() && wcsearch_do_scroll) {
 			$("html, body").animate({
 				scrollTop: wcsearch_get_loop().offset().top
 			});
 		}
+		wcsearch_do_scroll = true;
 		
 		if (form.data("use-ajax")) {
 			use_ajax = true;
@@ -877,11 +1010,16 @@ var wcsearch_request_processing = false;
 			use_ajax = false;
 		}
 		
+		if (form.data("target_url")) {
+			is_target_url = true;
+		} else {
+			is_target_url = false;
+		}
+		
 		// all_inputs -> search_inputs_value -> form_params -> URI_params -> wcsearch_query_string
 		var all_inputs = form.find(".wcsearch-search-input, input.wcsearch-hidden-field[type=hidden]");
 		var form_params = {};
 		var search_inputs_value = [];
-		
 		
 		all_inputs.each(function(i, _input) {
 			var input = new wcsearch_search_input($(_input));
@@ -951,7 +1089,7 @@ var wcsearch_request_processing = false;
 		
 		wcsearch_query_string = URI_params;
 		
-		if (use_ajax) {
+		if (use_ajax && !is_target_url) {
 			if (wcsearch_get_loop()) {
 				wcsearch_get_loop().attr("data-form-id", form_id);
 			}
@@ -1107,7 +1245,9 @@ var wcsearch_request_processing = false;
 					if (typeof response_from_the_action_function.counters == "object" && response_from_the_action_function.counters) {
 						
 						$(wcsearch_dropdowns).each(function(i, dropdown) {
-							if (typeof dropdown.input != "undefined") {
+							if (typeof dropdown.input != "undefined" && dropdown.input.hasClass("ui-autocomplete-input")) {
+								// call initialization to avoid error
+								dropdown.input.autocomplete();
 								if (dropdown.input.autocomplete("widget").is(":visible")) {
 									dropdown.is_open = true;
 									dropdown.input.autocomplete("close");
@@ -1141,6 +1281,13 @@ var wcsearch_request_processing = false;
 								$(".wcsearch-item-option-"+counter_option).each(function() {
 									$(this).replaceWith($(counter_item)[0]);
 								});
+							} else if (typeof counter_tag.counter_hours != "undefined") {
+								var counter_hours = counter_tag.counter_hours;
+								var counter_item = counter_tag.counter_item;
+								
+								$(".wcsearch-item-hours-"+counter_hours).each(function() {
+									$(this).replaceWith($(counter_item)[0]);
+								});
 							} else if (typeof counter_tag.counter_ratings != "undefined") {
 								var counter_ratings = counter_tag.counter_ratings;
 								var counter_item = counter_tag.counter_item;
@@ -1167,8 +1314,8 @@ var wcsearch_request_processing = false;
 				},
 				complete: function() {
 					$(wcsearch_dropdowns).each(function(i, dropdown) {
-						if (typeof dropdown.input != "undefined" && dropdown.is_open) {
-							dropdown.input.autocomplete("search", "");
+						if (typeof dropdown.input != "undefined" && dropdown.input.hasClass("ui-autocomplete-input") && dropdown.is_open) {
+							dropdown.input.trigger("click");
 						}
 					});
 				}
@@ -1248,9 +1395,6 @@ var wcsearch_request_processing = false;
 			
 			wcsearch_open_close_dep_inputs(form);
 			
-			// temporarily disable submission on changes while resetting
-			wcsearch_request_processing = true;
-
 			// reset the same type of inputs before submit,
 			var field_slug = $(this).parents(".wcsearch-search-input").attr("data-slug");
 			var the_same_inputs = form.find(".wcsearch-search-input[data-slug="+field_slug+"]").not(input_div);
@@ -1259,15 +1403,16 @@ var wcsearch_request_processing = false;
 				input.reset();
 			});
 			
-			wcsearch_request_processing = false;
-			
 			if (!form.data("auto-submit")) {
 				return false;
 			}
 			
-			// do not recount self input items
 			$(".wcsearch-item-count-no-recount").removeClass("wcsearch-item-count-no-recount");
-			input_div.find(".wcsearch-item-count").addClass("wcsearch-item-count-no-recount");
+			
+			if (input_div.data("type") == "tax" && input_div.data("relation") == 'OR') {
+				// do not recount self input items
+				input_div.find(".wcsearch-item-count").addClass("wcsearch-item-count-no-recount");
+			}
 			
 			wcsearch_submit_form(form);
 		}
@@ -1298,6 +1443,7 @@ var wcsearch_request_processing = false;
 							if (Array.isArray(value)) {
 								var value_arr = value;
 								$.each(value_arr, function(index, value) {
+
 									if (value) {
 										var input_values = value.value.toString().split(",").filter(item => item);
 										
@@ -1345,13 +1491,8 @@ var wcsearch_request_processing = false;
 							wcsearch_setup_terms_separators();
 						}
 					} else {
-						// temporarily disable submission on changes while resetting
-						wcsearch_request_processing = true;
-						
 						var dep_input_reset = new wcsearch_search_input(dep_input);
 						dep_input_reset.reset();
-						
-						wcsearch_request_processing = false;
 						
 						dep_input.parents(".wcsearch-search-placeholder").addClass("wcsearch-search-placeholder-dependency-view-closed");
 					}
@@ -1373,8 +1514,7 @@ var wcsearch_request_processing = false;
 	$(".wcsearch-search-input-reset-button").on("click", function(e) {
 		e.preventDefault();
 		
-		// temporarily disable submission on changes while resetting
-		wcsearch_request_processing = true;
+		wcsearch_do_scroll = false;
 		
 		var form = $(this).parents("form");
 		
@@ -1383,7 +1523,6 @@ var wcsearch_request_processing = false;
 			var input = new wcsearch_search_input($(_input));
 			input.reset();
 		});
-		wcsearch_request_processing = false;
 		
 		wcsearch_submit_form(form);
 		
@@ -1578,8 +1717,8 @@ var wcsearch_request_processing = false;
 			_appendWrapper: function() {
 				var append_to = null; // append to body
 				
-				if ($(this).parents(".wcsearch-sticky-scroll")) {
-					append_to = ".wcsearch-sticky-scroll"; // append to fixed fiv
+				if (this.element.parents(".wcsearch-sticky-scroll").length) {
+					append_to = this.element.parents(".wcsearch-sticky-scroll"); // append to fixed fiv
 				}
 				
 				//append_to = this.wrapper;
@@ -1778,6 +1917,9 @@ var wcsearch_request_processing = false;
 				})
 				.appendTo(this.wrapper)
 				.on("click", function(e) {
+					
+					wcsearch_do_scroll = false;
+					
 					input.val('');
 					if ($('#selected_tax\\['+id+'\\]').val()) {
 						// submit search form on input reset
@@ -1789,6 +1931,8 @@ var wcsearch_request_processing = false;
 					} else {
 						input.trigger('change');
 					}
+					
+					wcsearch_do_scroll = false;
 
 					if (_this._openMobileKeyboard()) {
 						//input.autocomplete("search", input.val());
@@ -1850,14 +1994,18 @@ var wcsearch_request_processing = false;
 
 						response(common_array);
 					} else {
-						var orderby = this.input.parents(".wcsearch-search-input").data("orderby");
-						var order = this.input.parents(".wcsearch-search-input").data("order");
+						var do_links 		= this.input.parents(".wcsearch-search-input").data("do_links");
+						var do_links_blank 	= this.input.parents(".wcsearch-search-input").data("do_links_blank");
+						var orderby 		= this.input.parents(".wcsearch-search-input").data("orderby");
+						var order 			= this.input.parents(".wcsearch-search-input").data("order");
 						
-						var used_by = this.input.parents(".wcsearch-search-input").data("used_by");
+						var used_by 		= this.input.parents(".wcsearch-search-input").data("used_by");
 						
 						var post_params = {
 			            	action:          wcsearch_js_objects.adapter_options[used_by].keywords_search_action,
 			            	query_string:    wcsearch_query_string,
+			            	do_links:        do_links,
+			            	do_links_blank:  do_links_blank,
 			            	orderby:         orderby,
 			            	order:           order,
 			            	term:            term
@@ -1966,6 +2114,9 @@ var wcsearch_request_processing = false;
 				})
 				.appendTo(this.wrapper)
 				.on("click", function(e) {
+					
+					wcsearch_do_scroll = false;
+					
 					if ($(this).hasClass("wcsearch-fa-close")) {
 						input.val('');
 						input_place_id.val('');
@@ -2036,6 +2187,8 @@ var wcsearch_request_processing = false;
 				this._on(input, {
 					reset: function() {
 						
+						wcsearch_do_scroll = false;
+						
 						input_place_id.val('');
 						
 						// do not use trigger("click"), otherwise it will click on "My location" button
@@ -2072,8 +2225,10 @@ var wcsearch_request_processing = false;
 							$('#selected_tax\\['+id+'\\]').trigger("wcsearch:selected_tax_change");
 							$('#selected_tax\\['+id+'\\]').trigger("change");
 						} else {
+							wcsearch_do_scroll = false;
 							var name = ui.item.value;
 							$('#selected_tax\\['+id+'\\]').val('');
+							wcsearch_do_scroll = false;
 							element.val('');
 						}
 						name = $('<textarea />').html(name).text(); // HTML Entity Decode
@@ -2093,7 +2248,9 @@ var wcsearch_request_processing = false;
 								input.trigger("focus");
 								input.autocomplete("search", input.val());
 							} else {
+								wcsearch_do_scroll = false;
 								input.trigger("focusout");
+								wcsearch_do_scroll = false;
 								input.autocomplete("search", '');
 							}
 							
@@ -2111,6 +2268,9 @@ var wcsearch_request_processing = false;
 						}
 					},
 					change: function(event, ui) {
+						
+						wcsearch_do_scroll = false;
+						
 						input_place_id.val('');
 					}
 				});
@@ -2206,6 +2366,9 @@ var wcsearch_request_processing = false;
 				})
 				.appendTo(this.wrapper)
 				.on("click", function(e) {
+					
+					wcsearch_do_scroll = false;
+					
 					if ($(this).hasClass("wcsearch-fa-close")) {
 						input.val('');
 						input_place_id.val('');
@@ -2216,7 +2379,7 @@ var wcsearch_request_processing = false;
 						window[geocode_field_callback](input, geocode_field_error);
 					}
 					
-					input.trigger('change');
+					wcsearch_do_scroll = false;
 
 					if (_this._openMobileKeyboard()) {
 						//input.autocomplete("search", input.val());
@@ -2267,6 +2430,8 @@ var wcsearch_request_processing = false;
 				this._on(input, {
 					reset: function() {
 						
+						wcsearch_do_scroll = false;
+						
 						input_place_id.val('');
 						
 						// do not use trigger("click"), otherwise it will click on "My location" button
@@ -2302,6 +2467,9 @@ var wcsearch_request_processing = false;
 						input.autocomplete("search", input.val());
 					},
 					change: function(event, ui) {
+						
+						wcsearch_do_scroll = false;
+						
 						input_place_id.val('');
 					}
 				});
@@ -2491,21 +2659,25 @@ var wcsearch_request_processing = false;
 
 						response(common_array);
 					} else {
-						var orderby = this.input.parents(".wcsearch-search-input").data("orderby");
-						var order = this.input.parents(".wcsearch-search-input").data("order");
+						var do_links 		= this.input.parents(".wcsearch-search-input").data("do_links");
+						var do_links_blank 	= this.input.parents(".wcsearch-search-input").data("do_links_blank");
+						var orderby 		= this.input.parents(".wcsearch-search-input").data("orderby");
+						var order 			= this.input.parents(".wcsearch-search-input").data("order");
 						
-						var used_by = this.input.parents(".wcsearch-search-input").data("used_by");
+						var used_by 		= this.input.parents(".wcsearch-search-input").data("used_by");
 						
 						var post_params = {
-				            	action:          wcsearch_js_objects.adapter_options[used_by].keywords_search_action,
-				            	query_string:    wcsearch_query_string,
-				            	orderby:         orderby,
-				            	order:           order,
-				            	term:            term
-				            }
-							
-							var form = this.input.parents("form");
-							post_params = wcsearch_add_common_fields(post_params, form);
+			            	action:          wcsearch_js_objects.adapter_options[used_by].keywords_search_action,
+			            	query_string:    wcsearch_query_string,
+			            	do_links:        do_links,
+			            	do_links_blank:  do_links_blank,
+			            	orderby:         orderby,
+			            	order:           order,
+			            	term:            term
+			            }
+						
+						var form = this.input.parents("form");
+						post_params = wcsearch_add_common_fields(post_params, form);
 						
 						$.ajax({
 				        	url: wcsearch_js_objects.ajaxurl,
@@ -2557,14 +2729,14 @@ var wcsearch_request_processing = false;
 		window.heirarhical_dropdown = $.widget("custom.heirarhical_dropdown", tax_keywords, {
 			input_icon_class: "wcsearch-fa  wcsearch-fa-search",
 			wrapper_class: "wcsearch-dropdowns-menu-hierarhical",
-			placeholder: "",
+			placeholders: "",
 			
 			_createAutocomplete: function() {
 				
 				var wrapper = this.wrapper;
 				var id = this.element.data('id');
 				var name = this.element.data('tax');
-				var placeholder = this.element.data('placeholder');
+				var placeholders = this.element.data('placeholders');
 				var depth_level = this.element.data('depth-level');
 				
 				this.input_value = $("<input>", {
@@ -2586,7 +2758,7 @@ var wcsearch_request_processing = false;
 				})
 				.appendTo(wrapper)
 				.val(value)
-				.attr("placeholder", placeholder)
+				.attr("placeholder", placeholders)
 				.addClass("wcsearch-form-control wcsearch-main-search-field");
 				
 				this._autocompleteWithOptions(this.input);
@@ -2614,7 +2786,7 @@ var wcsearch_request_processing = false;
 							$('#selected_tax\\['+id+'\\]').val('');
 							element.val('');
 						}
-						$('#selected_tax\\['+id+'\\]').trigger("change");
+						$('#selected_tax\\['+id+'\\]').trigger("change"); // this triggers the submission twice
 						
 						name = $('<textarea />').html(name).text(); // HTML Entity Decode
 						input.val(name);
@@ -2644,7 +2816,7 @@ var wcsearch_request_processing = false;
 								'parentid': ui.item.value,
 								'tax': tax,
 								'depth_level': depth_level+1,
-								'placeholder': placeholder,
+								'placeholders': placeholders,
 								'uID': id,
 								'orderby': orderby,
 								'order': order,
@@ -2704,6 +2876,9 @@ var wcsearch_request_processing = false;
 				})
 				.appendTo(this.wrapper)
 				.on("click", function(e) {
+					
+					wcsearch_do_scroll = false;
+					
 					var selects = wrapper.parent().find('select');
 					var curr_level = element.data('depth-level');
 					
@@ -2730,6 +2905,13 @@ var wcsearch_request_processing = false;
 						input_value.val('');
 					}
 				});
+			},
+			
+			_destroy: function() {
+				// comment this line in hierarhical,
+				// it gives error: too much recursion
+				//this.wrapper.remove();
+				this.element.show();
 			},
 		});
 		
@@ -2760,6 +2942,9 @@ var wcsearch_request_processing = false;
 					);
 				};
 				var delete_item = function(input, element_id, item) {
+					
+					wcsearch_do_scroll = false;
+					
 					item.remove();
 					
 					var value = $('#selected_tax\\['+element_id+'\\]').val()
@@ -2834,10 +3019,6 @@ var wcsearch_request_processing = false;
 						}
 						$('#selected_tax\\['+id+'\\]').trigger("change");
 						
-						name = $('<textarea />').html(name).text(); // HTML Entity Decode
-						this.input.val(name);
-						this.input.trigger('change');
-						
 						create_item(this.input, this.element.data("id"), ui.item.value, ui.item.label);
 						
 						placeholder.hide();
@@ -2878,6 +3059,9 @@ var wcsearch_request_processing = false;
 			},
 			
 			_createShowAllButton: function() {
+				
+				wcsearch_do_scroll = false;
+				
 				this._super();
 				
 				var input = this.input;
@@ -2936,6 +3120,13 @@ var wcsearch_request_processing = false;
 				});
 
 				response(common_array);
+			},
+			
+			_destroy: function() {
+				// comment this line in hierarhical,
+				// it gives error: too much recursion
+				//this.wrapper.remove();
+				this.element.show();
 			},
 		});
 	}

@@ -25,12 +25,12 @@ class wcsearch_query {
 
 		$this->q_args = apply_filters("wcsearch_query_args", $this->q_args, $this->args);
 		
-		//add_action('pre_get_posts', array($this, 'pre_get_posts'));
+		add_action('pre_get_posts', array($this, 'pre_get_posts'));
 
 		$this->query = new WP_Query($this->q_args);
 		//var_dump($this->query->request);
 		
-		//remove_action('pre_get_posts', array($this, 'pre_get_posts'));
+		remove_action('pre_get_posts', array($this, 'pre_get_posts'));
 	}
 
 	public function pre_get_posts($q) {
